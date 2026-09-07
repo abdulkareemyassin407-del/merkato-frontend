@@ -19,7 +19,7 @@ interface CartItem {
 
 const TRANSLATIONS = {
   en: {
-    heroTitle: "Ethiopia's Direct Wholesale Food Marketplace",
+    heroTitle: "Buy Food Products Directly From Trusted Suppliers",
     heroSub: "Connecting verified suppliers in Addis Ababa with restaurants, hotels, and retail stores.",
     becomeSeller: "Seller Portal",
     verified: "Verified Addis Suppliers",
@@ -37,7 +37,7 @@ const TRANSLATIONS = {
     readyToOrder: "Ready to lock in this bulk order? Call Central Dispatch:",
   },
   am: {
-    heroTitle: "የኢትዮጵያ ቀጥተኛ የጅምላ የምግብ ገበያ",
+    heroTitle: "የምግብ ምርቶችን ከታመኑ አቅራቢዎች በቀጥታ ይግዙ",
     heroSub: "በአዲስ አበባ ያሉ የተረጋገጡ አቅራቢዎችን ከሆቴሎች፣ ሬስቶራንቶች እና ሱቆች ጋር ያገናኛል።",
     becomeSeller: "የአቅራቢዎች መግቢያ",
     verified: "የተረጋገጡ አቅራቢዎች",
@@ -55,7 +55,7 @@ const TRANSLATIONS = {
     readyToOrder: "ይህንን የጅምላ ትዕዛዝ ለማረጋገጥ ዝግጁ ነዎት? ወደ ማዕከላዊ ትዕዛዝ ይደውሉ:",
   },
   ar: {
-    heroTitle: "سوق المواد الغذائية بالجملة المباشر في إثيوبيا",
+    heroTitle: "اشترِ المنتجات الغذائية مباشرة من الموردين الموثوقين",
     heroSub: "ربط الموردين المعتمدين في أديس أبابا بالمطاعم والفنادق والمتاجر.",
     becomeSeller: "بوابة البائعين",
     verified: "موردون معتمدون",
@@ -75,7 +75,7 @@ const TRANSLATIONS = {
 };
 
 export default function Home() {
-  const [lang, setLang] = useState<'en' | 'am' | 'ar'>('en');
+  const [lang, setLang] = useState<'en' | 'am' | 'ar'>('am');
   const [search, setSearch] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [products, setProducts] = useState<Product[]>([]);
@@ -84,7 +84,6 @@ export default function Home() {
 
   const t = TRANSLATIONS[lang];
 
-  // Fetch real products dynamically from backend API
   useEffect(() => {
     fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api/v1'}/products`)
       .then(res => res.json())
@@ -134,10 +133,10 @@ export default function Home() {
       {/* Header */}
       <header className="sticky top-0 z-40 bg-white/90 backdrop-blur-md border-b border-[#EFECE6] px-6 lg:px-12 py-3.5 flex items-center justify-between">
         <Link href="/" className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-[#D9531E] rounded-xl flex items-center justify-center text-white font-black text-xl shadow-sm">M</div>
+          <div className="w-10 h-10 bg-[#D9531E] rounded-xl flex items-center justify-center text-white font-black text-xl shadow-sm">HS</div>
           <div>
-            <span className="text-2xl font-black tracking-tight text-[#2B231D]">Merkato</span>
-            <span className="block text-[10px] font-extrabold text-[#D9531E] uppercase tracking-widest -mt-1">Wholesale Hub</span>
+            <span className="text-2xl font-black tracking-tight text-[#2B231D]">HABESHA SUQ</span>
+            <span className="block text-[10px] font-extrabold text-[#D9531E] uppercase tracking-widest -mt-1">ሀበሻ ሱቅ</span>
           </div>
         </Link>
         
@@ -173,7 +172,7 @@ export default function Home() {
       <section className="max-w-7xl mx-auto px-6 lg:px-12 pt-10 pb-6 grid lg:grid-cols-2 gap-10 items-center">
         <div>
           <span className="bg-[#FFF2ED] text-[#B84216] border border-[#FFD8CC] text-xs font-black uppercase tracking-widest px-3 py-1 rounded-full inline-block mb-3">
-            Addis Ababa Direct Food Marketplace
+            Ethiopia's Online Food Marketplace
           </span>
           <h1 className="text-4xl lg:text-5xl font-black leading-tight tracking-tight text-[#2B231D]">
             {t.heroTitle}
@@ -335,7 +334,7 @@ export default function Home() {
           <a href="tel:0944669703">0944669703</a>
         </div>
         <p className="max-w-2xl mx-auto text-[11px] leading-relaxed">
-          Merkato is an intermediary platform connecting buyers with verified suppliers across Addis Ababa. Direct seller contacts are masked for security and order verification. All transactions are coordinated through central dispatch.
+          Habesha Suq is an intermediary platform connecting buyers with verified suppliers across Addis Ababa. Direct seller contacts are masked for security and order verification. All transactions are coordinated through central dispatch.
         </p>
       </footer>
 
