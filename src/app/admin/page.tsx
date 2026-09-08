@@ -1,107 +1,226 @@
 'use client';
-import React, { useState, useEffect } from 'react';
+
+import React, { useState } from 'react';
 import Link from 'next/link';
 
-interface AdminProduct {
-  id: number;
-  name: string;
+interface PendingSeller {
+  id: string;
+  businessName: string;
+  phone: string;
+  subCity: string;
   category: string;
-  price: number;
-  tierPrice: number;
-  tierQty: number;
-  sellerPhone?: string;
-  origin?: string;
+  status: 'PENDING' | 'APPROVED' | 'REJECTED';
 }
 
-export default function AdminPortal() {
-  const [products, setProducts] = useState<AdminProduct[]>([]);
-  const [loading, setLoading] = useState(true);
+interface DispatchOrder {
+  id: string;
+  customerName: string;
+  customerPhone: string;
+  subCity: string;
+  sellerName: string;
+  items: string;
+  total: number;
+  status: 'RECEIVED' | 'CONFIRMED' | 'PREPARING' | 'OUT_FOR_DELIVERY' | 'DELIVERED';
+}
 
-  useEffect(() => {
-    fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api/v1'}/admin/products`)
-      .then(res => res.json())
-      .then(data => {
-        if (data.success && Array.isArray(data.data)) {
-          setProducts(data.data);
-        }
-      })
-      .catch(() => setProducts([]))
-      .finally(() => setLoading(false));
-  }, []);
+export default function AdminConsolePage() {
+  const [activeTab, setActiveTab] = useState<'sellers' | 'dispatch' | 'analytics'>('sellers');
+
+  // Pending Sellers State
+  const [sellers, setSellers] = useState<PendingSeller[]>([
+    { id: 'SEL-001', businessName: 'Addis Grains PLC', phone: '+251 911 223 344', subCity: 'Merkato', category: 'Grains', status: 'PENDING' },
+    { id: 'SEL-002', businessName: 'Bole Fresh Produce', phone: '+251 922 334 455', subCity: 'Bole', category: 'Agricultural', status: 'PENDING' },
+  ]);
+
+  // Dispatch Orders State
+  const [orders, setOrders] = useState<DispatchOrder[]>([
+    {
+      id: '1024',
+      customerName: 'Abebe Kebede',
+      customerPhone: '+251 900 112 233',
+      subCity: 'Bole',
+      sellerName: 'Addis Agro Wholesale',
+      items: '2x Teff (White) 100kg',
+      total: 13000,
+      status: 'PREPARING',
+    },
+    {
+      id: '1025',
+      customerName: 'Tigist Haile',
+      customerPhone: '+251 911 445 566',
+      subCity: 'Arada',
+      sellerName: 'Merkato Spices Co.',
+      items: '5kg Berbere',
+      total: 2500,
+      status: 'RECEIVED',
+    },
+  ]);
+
+  const updateSellerStatus = (id: string, newStatus: 'APPROVED' | 'REJECTED') => {
+    setSellers(sellers.map((s) => (s.id === id ? { ...s, status: newStatus } : s)));
+  };
+
+  const updateOrderStatus = (id: string, newStatus: DispatchOrder['status']) => {
+    setOrders(orders.map((o) => (o.id === id ? { ...o, status: newStatus } : o)));
+  };
 
   return (
-    <div className="min-h-screen bg-[#FAF7F2] text-[#2B231D] font-sans">
-      
-      {/* Navigation Header */}
-      <header className="sticky top-0 z-40 bg-white/90 backdrop-blur-md border-b border-[#EFECE6] px-6 lg:px-12 py-3.5 flex items-center justify-between">
-        <Link href="/" className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-[#D9531E] rounded-xl flex items-center justify-center text-white font-black text-xl shadow-sm">HS</div>
-          <div>
-            <span className="text-2xl font-black tracking-tight text-[#2B231D]">HABESHA SUQ</span>
-            <span className="block text-[10px] font-extrabold text-[#D9531E] uppercase tracking-widest -mt-1">Order Dispatch Console</span>
+    <div className="min-h-screen bg-[#FAF7F2] text-[#2B231D] font-sans pb-16">
+      {/* Admin Navigation Bar */}
+      <header className="bg-[#2B231D] text-white px-6 lg:px-12 py-4 flex items-center justify-between border-b border-gray-800">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 bg-amber-500 rounded-xl flex items-center justify-center text-white font-black text-xl shadow-sm">
+            👑
           </div>
-        </Link>
-        <Link href="/" className="text-xs font-bold text-[#6E655F] hover:text-[#D9531E] transition">
-          ← Back to Site
+          <div>
+            <span className="text-xl font-black">ሀበሻ ሱቅ - Central Dispatch</span>
+            <span className="block text-[10px] font-extrabold text-amber-400 uppercase tracking-widest -mt-1">
+              Admin & Dispatch Control
+            </span>
+          </div>
+        </div>
+        <Link href="/" className="text-xs font-bold text-gray-300 hover:text-white">
+          ← Exit Admin Console
         </Link>
       </header>
 
-      <main className="max-w-6xl mx-auto px-6 py-10 space-y-6">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div>
-            <span className="bg-[#D9531E] text-white text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-full inline-block mb-2">
-              Master Admin Control
-            </span>
-            <h1 className="text-2xl font-black text-[#2B231D]">Dispatch & Inventory Inspection</h1>
-          </div>
-          <div className="bg-white px-4 py-2 rounded-xl border border-[#EFECE6] text-xs font-bold text-[#6E655F]">
-            Total Active Inventory: <strong className="text-[#D9531E]">{products.length}</strong>
-          </div>
+      <main className="max-w-6xl mx-auto px-6 py-8 space-y-6">
+        {/* Navigation Tabs */}
+        <div className="flex border-b border-[#EFECE6] space-x-6 text-xs font-extrabold text-[#6E655F]">
+          <button
+            onClick={() => setActiveTab('sellers')}
+            className={`pb-3 ${activeTab === 'sellers' ? 'border-b-2 border-amber-500 text-amber-600' : 'hover:text-[#2B231D]'}`}
+          >
+            🏪 የሻጮች ማረጋገጫ (Seller Verification)
+          </button>
+          <button
+            onClick={() => setActiveTab('dispatch')}
+            className={`pb-3 ${activeTab === 'dispatch' ? 'border-b-2 border-amber-500 text-amber-600' : 'hover:text-[#2B231D]'}`}
+          >
+            🚚 ማድረስና ትዕዛዝ (Order Dispatch Console)
+          </button>
+          <button
+            onClick={() => setActiveTab('analytics')}
+            className={`pb-3 ${activeTab === 'analytics' ? 'border-b-2 border-amber-500 text-amber-600' : 'hover:text-[#2B231D]'}`}
+          >
+            📈 የፕላትፎርም ስታቲስቲክስ (System Overview)
+          </button>
         </div>
 
-        {loading ? (
-          <div className="bg-white border border-[#EFECE6] rounded-2xl p-12 text-center text-xs font-bold text-[#6E655F]">
-            Loading central dispatch inventory...
-          </div>
-        ) : products.length === 0 ? (
-          <div className="bg-white border border-[#EFECE6] rounded-2xl p-12 text-center space-y-2">
-            <p className="font-bold text-sm text-[#2B231D]">No listings in central database</p>
-            <p className="text-xs text-[#6E655F]">Sellers have not published any new products yet.</p>
-          </div>
-        ) : (
-          <div className="bg-white border border-[#EFECE6] rounded-2xl shadow-sm overflow-x-auto">
-            <table className="w-full text-left text-xs border-collapse">
-              <thead>
-                <tr className="bg-[#FAF7F2] border-b border-[#EFECE6] text-[#6E655F] font-black uppercase tracking-wider">
-                  <th className="p-4">ID</th>
-                  <th className="p-4">Product Name</th>
-                  <th className="p-4">Category</th>
-                  <th className="p-4">Unit Price</th>
-                  <th className="p-4">Bulk Tier</th>
-                  <th className="p-4">Supplier Phone (Internal)</th>
-                  <th className="p-4">Origin / Depot</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-[#EFECE6] font-medium">
-                {products.map((p) => (
-                  <tr key={p.id} className="hover:bg-[#FAF7F2] transition">
-                    <td className="p-4 font-mono font-bold text-[11px] text-[#6E655F]">#{p.id}</td>
-                    <td className="p-4 font-bold text-[#2B231D]">{p.name}</td>
-                    <td className="p-4"><span className="bg-[#FFF2ED] text-[#D9531E] px-2.5 py-1 rounded-lg font-bold">{p.category}</span></td>
-                    <td className="p-4 font-bold">ETB {p.price.toLocaleString()}</td>
-                    <td className="p-4 font-bold text-[#137333]">ETB {p.tierPrice.toLocaleString()} ({p.tierQty}+)</td>
-                    <td className="p-4 font-bold text-[#2B231D]">
-                      {p.sellerPhone ? (
-                        <a href={`tel:${p.sellerPhone}`} className="text-[#D9531E] underline">{p.sellerPhone}</a>
-                      ) : (
-                        <span className="text-[#9E948C]">Not Provided</span>
-                      )}
-                    </td>
-                    <td className="p-4 text-[#6E655F]">{p.origin || 'Addis Ababa'}</td>
+        {/* TAB 1: SELLER APPROVALS */}
+        {activeTab === 'sellers' && (
+          <div className="bg-white rounded-2xl border border-[#EFECE6] p-6 shadow-sm space-y-4">
+            <h2 className="text-xs font-black text-[#2B231D] uppercase tracking-wider">Pending Seller Registrations</h2>
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-xs">
+                <thead>
+                  <tr className="border-b border-[#EFECE6] text-[#6E655F]">
+                    <th className="pb-3">Business Name</th>
+                    <th className="pb-3">Sub-City</th>
+                    <th className="pb-3">Category</th>
+                    <th className="pb-3">Phone</th>
+                    <th className="pb-3">Status</th>
+                    <th className="pb-3">Action</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody className="divide-y divide-[#EFECE6]">
+                  {sellers.map((s) => (
+                    <tr key={s.id}>
+                      <td className="py-3 font-bold">{s.businessName}</td>
+                      <td className="py-3 text-[#6E655F]">{s.subCity}</td>
+                      <td className="py-3 text-[#6E655F]">{s.category}</td>
+                      <td className="py-3 font-mono">{s.phone}</td>
+                      <td className="py-3">
+                        <span
+                          className={`px-2 py-0.5 rounded text-[10px] font-black ${
+                            s.status === 'APPROVED'
+                              ? 'bg-green-100 text-green-700'
+                              : s.status === 'REJECTED'
+                              ? 'bg-red-100 text-red-700'
+                              : 'bg-amber-100 text-amber-700'
+                          }`}
+                        >
+                          {s.status}
+                        </span>
+                      </td>
+                      <td className="py-3 space-x-2">
+                        {s.status === 'PENDING' && (
+                          <>
+                            <button
+                              onClick={() => updateSellerStatus(s.id, 'APPROVED')}
+                              className="bg-green-600 text-white text-[10px] px-2.5 py-1 rounded font-bold hover:bg-green-700"
+                            >
+                              Approve
+                            </button>
+                            <button
+                              onClick={() => updateSellerStatus(s.id, 'REJECTED')}
+                              className="bg-red-600 text-white text-[10px] px-2.5 py-1 rounded font-bold hover:bg-red-700"
+                            >
+                              Reject
+                            </button>
+                          </>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
+        {/* TAB 2: ORDER DISPATCH CONSOLE */}
+        {activeTab === 'dispatch' && (
+          <div className="bg-white rounded-2xl border border-[#EFECE6] p-6 shadow-sm space-y-4">
+            <h2 className="text-xs font-black text-[#2B231D] uppercase tracking-wider">Live Order Status Tracker</h2>
+            <div className="space-y-4">
+              {orders.map((ord) => (
+                <div key={ord.id} className="border border-[#EFECE6] rounded-xl p-4 bg-[#FAF7F2] space-y-2 text-xs">
+                  <div className="flex justify-between items-center font-bold">
+                    <span>Order #{ord.id} — Customer: {ord.customerName} ({ord.customerPhone})</span>
+                    <span className="text-amber-600 font-black">{ord.total} ETB</span>
+                  </div>
+                  <p className="text-[#6E655F]">
+                    <strong>Sub-City:</strong> {ord.subCity} | <strong>Seller:</strong> {ord.sellerName}
+                  </p>
+                  <p className="text-[#6E655F]">
+                    <strong>Items:</strong> {ord.items}
+                  </p>
+                  <div className="flex items-center gap-3 pt-2 border-t border-[#EFECE6]">
+                    <span className="font-bold">Dispatch Status:</span>
+                    <select
+                      value={ord.status}
+                      onChange={(e) => updateOrderStatus(ord.id, e.target.value as DispatchOrder['status'])}
+                      className="px-3 py-1 border rounded bg-white font-bold text-xs"
+                    >
+                      <option value="RECEIVED">Order Received (ትዕዛዝ ተቀብለናል)</option>
+                      <option value="CONFIRMED font-bold">Confirmed (ተረጋግጧል)</option>
+                      <option value="PREPARING">Seller Preparing (በማዘጋጀት ላይ)</option>
+                      <option value="OUT_FOR_DELIVERY">Out for Delivery (ለማድረስ ተልኳል)</option>
+                      <option value="DELIVERED">Delivered (ደርሷል)</option>
+                    </select>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* TAB 3: SYSTEM OVERVIEW */}
+        {activeTab === 'analytics' && (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="bg-white p-6 rounded-2xl border border-[#EFECE6] shadow-sm">
+              <span className="text-xs font-black text-[#6E655F] uppercase">Active Stores</span>
+              <p className="text-2xl font-black text-[#2B231D] mt-2">12 Sellers</p>
+            </div>
+            <div className="bg-white p-6 rounded-2xl border border-[#EFECE6] shadow-sm">
+              <span className="text-xs font-black text-[#6E655F] uppercase">Total Wholesale Volume</span>
+              <p className="text-2xl font-black text-amber-600 mt-2">184,500 ETB</p>
+            </div>
+            <div className="bg-white p-6 rounded-2xl border border-[#EFECE6] shadow-sm">
+              <span className="text-xs font-black text-[#6E655F] uppercase">Dispatch Coverage</span>
+              <p className="text-2xl font-black text-green-700 mt-2">11 Sub-Cities</p>
+            </div>
           </div>
         )}
       </main>
