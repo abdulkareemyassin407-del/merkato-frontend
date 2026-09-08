@@ -1,4 +1,5 @@
 'use client';
+
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 
@@ -17,6 +18,24 @@ interface CartItem {
   quantity: number;
 }
 
+const CATEGORIES = [
+  'All',
+  'Grains',
+  'Flour',
+  'Rice',
+  'Oil',
+  'Spices',
+  'Coffee',
+  'Sugar',
+  'Pasta',
+  'Dairy',
+  'Canned',
+  'Nuts',
+  'Sauces',
+  'Baby',
+  'Salt',
+];
+
 const TRANSLATIONS = {
   en: {
     heroTitle: "Buy Food Products Directly From Trusted Suppliers",
@@ -30,7 +49,7 @@ const TRANSLATIONS = {
     supportTitle: "Central Order Dispatch Hotlines",
     cartTitle: "Wholesale Order Summary",
     emptyCart: "Your order cart is empty. Add products to generate a hotline quote.",
-    noProducts: "No products currently available. Sellers are adding inventory soon!",
+    noProducts: "No products currently available in this category. Sellers are adding inventory soon!",
     estimatedTotal: "Estimated Total:",
     addToCart: "+ Add to Order Cart",
     viewDetails: "View Full Details",
@@ -48,7 +67,7 @@ const TRANSLATIONS = {
     supportTitle: "የማዕከላዊ ትዕዛዝ አገልግሎት ስልኮች",
     cartTitle: "የጅምላ ትዕዛዝ ማጠቃለያ",
     emptyCart: "የእርስዎ የትዕዛዝ ቅርጫት ባዶ ነው። የደወል ዋጋ ጥቅስ ለማግኘት ምርቶችን ያክሉ።",
-    noProducts: "በአሁኑ ጊዜ ምንም ምርቶች የሉም። አቅራቢዎች በቅርቡ ምርቶችን ይጭናሉ!",
+    noProducts: "በዚህ ምድብ በአሁኑ ጊዜ ምንም ምርቶች የሉም። አቅራቢዎች በቅርቡ ምርቶችን ይጭናሉ!",
     estimatedTotal: "ጠቅላላ ተገመተ ዋጋ:",
     addToCart: "+ ወደ ትዕዛዝ ቅርጫት ጨምር",
     viewDetails: "ሙሉ ዝርዝር ይመልከቱ",
@@ -66,7 +85,7 @@ const TRANSLATIONS = {
     supportTitle: "خطوط استقبال الطلبات المركزية",
     cartTitle: "ملخص طلب الجملة",
     emptyCart: "سلة الطلبات فارغة. أضف منتجات للحصول على تسعيرة فورية.",
-    noProducts: "لا توجد منتجات حالياً. سيقوم البائعون بإضافة المنتجات قريباً!",
+    noProducts: "لا توجد منتجات حالياً في هذه الفئة. سيقوم البائعون بإضافة المنتجات قريباً!",
     estimatedTotal: "الإجمالي التقديري:",
     addToCart: "+ أضف إلى سلة الطلبات",
     viewDetails: "عرض التفاصيل الكاملة",
@@ -123,7 +142,7 @@ export default function Home() {
 
   const filteredProducts = products.filter(p => {
     const matchesSearch = p.name.toLowerCase().includes(search.toLowerCase());
-    const matchesCategory = selectedCategory === 'All' || p.category === selectedCategory;
+    const matchesCategory = selectedCategory === 'All' || p.category.toLowerCase() === selectedCategory.toLowerCase();
     return matchesSearch && matchesCategory;
   });
 
@@ -212,14 +231,15 @@ export default function Home() {
 
       {/* Product Catalog */}
       <section className="max-w-7xl mx-auto px-6 lg:px-12 py-8">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
+        <div className="flex flex-col gap-4 mb-6">
           <h2 className="text-xl font-black">{t.categories}</h2>
+          {/* 14 Categories Filter Horizontal Scroll */}
           <div className="flex flex-wrap gap-2 text-xs font-bold">
-            {['All', 'Flour', 'Cooking Oil', 'Beans & Lentils', 'Rice', 'Spices'].map((cat) => (
+            {CATEGORIES.map((cat) => (
               <button 
                 key={cat}
                 onClick={() => setSelectedCategory(cat)}
-                className={`px-4 py-2 rounded-xl border transition ${selectedCategory === cat ? 'bg-[#D9531E] text-white border-[#D9531E]' : 'bg-white border-[#EFECE6] text-[#6E655F]'}`}>
+                className={`px-3.5 py-2 rounded-xl border transition ${selectedCategory === cat ? 'bg-[#D9531E] text-white border-[#D9531E]' : 'bg-white border-[#EFECE6] text-[#6E655F] hover:border-[#D9531E]'}`}>
                 {cat}
               </button>
             ))}
@@ -236,11 +256,14 @@ export default function Home() {
             {filteredProducts.map((p) => (
               <div key={p.id} className="bg-white rounded-2xl border border-[#EFECE6] p-5 shadow-sm flex flex-col justify-between">
                 <div>
-                  <div className="bg-[#FAF7F2] h-36 rounded-xl flex items-center justify-center overflow-hidden mb-3">
+                  <div className="bg-[#FAF7F2] h-40 rounded-xl flex flex-col items-center justify-center border border-dashed border-[#EFECE6] overflow-hidden mb-3 relative">
                     {p.imageUrl ? (
                       <img src={p.imageUrl} alt={p.name} className="w-full h-full object-cover" />
                     ) : (
-                      <span className="text-xs font-bold text-[#9E948C]">No Image Attached</span>
+                      <div className="flex flex-col items-center justify-center text-[#9E948C] space-y-1">
+                        <span className="text-3xl">📷</span>
+                        <span className="text-[10px] font-extrabold uppercase tracking-wider">Photo Pending</span>
+                      </div>
                     )}
                   </div>
                   <span className="text-[10px] font-black uppercase text-[#D9531E] tracking-wider">{p.category}</span>
@@ -291,7 +314,7 @@ export default function Home() {
                           <span>ETB {(activeUnitPrice * item.quantity).toLocaleString()}</span>
                         </div>
                         <div className="flex justify-between items-center text-xs text-[#6E655F]">
-                          <span>ETB {activeUnitPrice.toLocaleString()} / unit {isTierActive && <strong className="text-[#137333] ml-1">(Bulk Tier Applied)</strong>}</span>
+                          <span>ETB {activeUnitPrice.toLocaleString()} / unit {isTierActive && <strong className="text-[#137333] ml-1">(Bulk Tier)</strong>}</span>
                           <div className="flex items-center border border-[#EFECE6] rounded-lg">
                             <button onClick={() => updateCartQty(item.product.id, -1)} className="px-2 py-1 font-bold">-</button>
                             <span className="px-3 font-bold text-black">{item.quantity}</span>
