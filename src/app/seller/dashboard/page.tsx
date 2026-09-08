@@ -1,227 +1,284 @@
 'use client';
+
 import React, { useState } from 'react';
 import Link from 'next/link';
 
-interface ProductInput {
+interface Product {
+  id: string;
   name: string;
   category: string;
-  price: string;
-  tierPrice: string;
-  tierQty: string;
-  sellerPhone: string;
-  imageUrl: string;
-  origin: string;
+  price: number;
+  stock: number;
 }
 
-export default function SellerDashboard() {
-  const [formData, setFormData] = useState<ProductInput>({
-    name: '',
-    category: 'Flour',
-    price: '',
-    tierPrice: '',
-    tierQty: '10',
-    sellerPhone: '',
-    imageUrl: '',
-    origin: 'Addis Ababa Central Depot',
-  });
+interface Order {
+  id: string;
+  customerName: string;
+  subCity: string;
+  items: string;
+  total: number;
+  status: 'New' | 'Confirmed' | 'Preparing' | 'Out for delivery' | 'Completed' | 'Cancelled';
+}
 
-  const [loading, setLoading] = useState(false);
-  const [message, setMessage] = useState<{ text: string; type: 'success' | 'error' } | null>(null);
+export default function SellerDashboardPage() {
+  const [activeTab, setActiveTab] = useState<'overview' | 'products' | 'orders' | 'profile'>('overview');
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  // Sample Products State
+  const [products, setProducts] = useState<Product[]>([
+    { id: 'P-101', name: 'የሐበሻ ምስር (Red Lentils)', category: 'Grain & Pulses', price: 1200, stock: 45 },
+    { id: 'P-102', name: 'ጤፍ / Teff (White)', category: 'Grains', price: 6500, stock: 120 },
+  ]);
+
+  // New Product Form State
+  const [newProdName, setNewProdName] = useState('');
+  const [newProdCategory, setNewProdCategory] = useState('Grains');
+  const [newProdPrice, setNewProdPrice] = useState('');
+  const [newProdStock, setNewProdStock] = useState('');
+
+  // Sample Orders State
+  const [orders, setOrders] = useState<Order[]>([
+    { id: 'ORD-1024', customerName: 'Abebe Kebede', subCity: 'Bole', items: '2x Teff (White)', total: 13000, status: 'Preparing' },
+    { id: 'ORD-1025', customerName: 'Tigist Haile', subCity: 'Kirkos', items: '1x Red Lentils', total: 1200, status: 'New' },
+  ]);
+
+  // Handle Add Product
+  const handleAddProduct = (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
-    setMessage(null);
+    if (!newProdName || !newProdPrice || !newProdStock) return;
 
-    const payload = {
-      name: formData.name,
-      category: formData.category,
-      price: Number(formData.price),
-      tierPrice: Number(formData.tierPrice),
-      tierQty: Number(formData.tierQty),
-      sellerPhone: formData.sellerPhone,
-      imageUrl: formData.imageUrl || 'https://images.unsplash.com/photo-1586201375761-83865001e31c?w=600&auto=format&fit=crop',
-      origin: formData.origin,
+    const newProd: Product = {
+      id: `P-${Date.now().toString().slice(-3)}`,
+      name: newProdName,
+      category: newProdCategory,
+      price: parseFloat(newProdPrice),
+      stock: parseInt(newProdStock),
     };
 
-    try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api/v1'}/products`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      });
+    setProducts([...products, newProd]);
+    setNewProdName('');
+    setNewProdPrice('');
+    setNewProdStock('');
+  };
 
-      const data = await res.json();
+  // Handle Order Status Change
+  const updateOrderStatus = (orderId: string, newStatus: Order['status']) => {
+    setOrders(orders.map(ord => ord.id === orderId ? { ...ord, status: newStatus } : ord));
+  };
 
-      if (data.success) {
-        setMessage({ text: 'Product listed successfully! Pending admin dispatch review.', type: 'success' });
-        setFormData({
-          name: '',
-          category: 'Flour',
-          price: '',
-          tierPrice: '',
-          tierQty: '10',
-          sellerPhone: '',
-          imageUrl: '',
-          origin: 'Addis Ababa Central Depot',
-        });
-      } else {
-        setMessage({ text: 'Failed to create product listing. Check your input.', type: 'error' });
-      }
-    } catch {
-      setMessage({ text: 'Backend service unreachable. Check API connection.', type: 'error' });
-    } finally {
-      setLoading(false);
-    }
+  // Handle Delete Product
+  const deleteProduct = (id: string) => {
+    setProducts(products.filter(p => p.id !== id));
   };
 
   return (
-    <div className="min-h-screen bg-[#FAF7F2] text-[#2B231D] font-sans">
-      
-      {/* Navigation Header */}
-      <header className="sticky top-0 z-40 bg-white/90 backdrop-blur-md border-b border-[#EFECE6] px-6 lg:px-12 py-3.5 flex items-center justify-between">
-        <Link href="/" className="flex items-center gap-3">
+    <div className="min-h-screen bg-[#FAF7F2] text-[#2B231D] font-sans pb-16">
+      {/* Header */}
+      <header className="bg-white border-b border-[#EFECE6] px-6 lg:px-12 py-4 flex items-center justify-between">
+        <Link href="/" className="flex items-center gap-2">
           <div className="w-10 h-10 bg-[#D9531E] rounded-xl flex items-center justify-center text-white font-black text-xl shadow-sm">HS</div>
           <div>
-            <span className="text-2xl font-black tracking-tight text-[#2B231D]">HABESHA SUQ</span>
-            <span className="block text-[10px] font-extrabold text-[#D9531E] uppercase tracking-widest -mt-1">የአቅራቢዎች መግቢያ</span>
+            <span className="text-xl font-black text-[#2B231D]">ሀበሻ ሱቅ</span>
+            <span className="block text-[10px] font-extrabold text-[#D9531E] uppercase tracking-widest -mt-1">Seller Hub</span>
           </div>
         </Link>
-        <Link href="/" className="text-xs font-bold text-[#6E655F] hover:text-[#D9531E] transition">
-          ← Exit to Marketplace
-        </Link>
+        <div className="flex items-center gap-3">
+          <span className="bg-[#E8F5E9] text-[#137333] border border-[#A5D6A7] text-[10px] font-black px-3 py-1 rounded-full uppercase">
+            🟢 Verified Store
+          </span>
+          <Link href="/" className="text-xs font-bold text-[#6E655F] hover:text-[#D9531E]">
+            Exit Dashboard
+          </Link>
+        </div>
       </header>
 
-      <main className="max-w-3xl mx-auto px-6 py-10">
-        <div className="bg-white rounded-3xl border border-[#EFECE6] p-8 shadow-sm space-y-6">
-          <div>
-            <span className="bg-[#FFF2ED] text-[#B84216] border border-[#FFD8CC] text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-full inline-block mb-2">
-              Addis Supplier Portal
-            </span>
-            <h1 className="text-2xl font-black text-[#2B231D]">List Wholesale Inventory</h1>
-            <p className="text-xs text-[#6E655F] mt-1 font-medium">
-              Submit your bulk food stock to Habesha Suq. All seller contact phone numbers remain protected and accessible only to central order dispatchers.
-            </p>
-          </div>
-
-          {message && (
-            <div className={`p-4 rounded-xl text-xs font-bold ${message.type === 'success' ? 'bg-[#E8F5E9] text-[#137333] border border-[#C8E6C9]' : 'bg-[#FFEBEE] text-[#C62828] border border-[#FFCDD2]'}`}>
-              {message.text}
-            </div>
-          )}
-
-          <form onSubmit={handleSubmit} className="space-y-4 text-xs font-bold">
-            
-            <div className="grid md:grid-cols-2 gap-4">
-              <div className="space-y-1">
-                <label className="text-[#6E655F]">Product Name (የምርት ስም)</label>
-                <input 
-                  type="text" 
-                  required
-                  placeholder="e.g. First Grade Magna Teff (ማግና ጤፍ)"
-                  value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  className="w-full bg-[#FAF7F2] border border-[#EFECE6] rounded-xl p-3 text-xs focus:outline-none"
-                />
-              </div>
-
-              <div className="space-y-1">
-                <label className="text-[#6E655F]">Product Category</label>
-                <select 
-                  value={formData.category}
-                  onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                  className="w-full bg-[#FAF7F2] border border-[#EFECE6] rounded-xl p-3 text-xs focus:outline-none">
-                  <option value="Flour">Flour / Grain (ዱቄትና እህል)</option>
-                  <option value="Cooking Oil">Cooking Oil (የምግብ ዘይት)</option>
-                  <option value="Beans & Lentils">Beans & Lentils (ምስርና አተር)</option>
-                  <option value="Rice">Rice (ሩዝ)</option>
-                  <option value="Spices">Spices (ቅመማ ቅመም)</option>
-                </select>
-              </div>
-            </div>
-
-            <div className="grid md:grid-cols-3 gap-4">
-              <div className="space-y-1">
-                <label className="text-[#6E655F]">Standard Unit Price (ETB)</label>
-                <input 
-                  type="number" 
-                  required
-                  placeholder="e.g. 8500"
-                  value={formData.price}
-                  onChange={(e) => setFormData({ ...formData, price: e.target.value })}
-                  className="w-full bg-[#FAF7F2] border border-[#EFECE6] rounded-xl p-3 text-xs focus:outline-none"
-                />
-              </div>
-
-              <div className="space-y-1">
-                <label className="text-[#137333]">Bulk Wholesale Price (ETB)</label>
-                <input 
-                  type="number" 
-                  required
-                  placeholder="e.g. 7900"
-                  value={formData.tierPrice}
-                  onChange={(e) => setFormData({ ...formData, tierPrice: e.target.value })}
-                  className="w-full bg-[#FAF7F2] border border-[#EFECE6] rounded-xl p-3 text-xs focus:outline-none"
-                />
-              </div>
-
-              <div className="space-y-1">
-                <label className="text-[#137333]">Min Bulk Quantity (Units)</label>
-                <input 
-                  type="number" 
-                  required
-                  placeholder="e.g. 10"
-                  value={formData.tierQty}
-                  onChange={(e) => setFormData({ ...formData, tierQty: e.target.value })}
-                  className="w-full bg-[#FAF7F2] border border-[#EFECE6] rounded-xl p-3 text-xs focus:outline-none"
-                />
-              </div>
-            </div>
-
-            <div className="grid md:grid-cols-2 gap-4">
-              <div className="space-y-1">
-                <label className="text-[#2B231D]">Supplier Direct Phone (Hidden Publicly)</label>
-                <input 
-                  type="tel" 
-                  required
-                  placeholder="0911XXXXXX"
-                  value={formData.sellerPhone}
-                  onChange={(e) => setFormData({ ...formData, sellerPhone: e.target.value })}
-                  className="w-full bg-[#FAF7F2] border border-[#EFECE6] rounded-xl p-3 text-xs focus:outline-none"
-                />
-              </div>
-
-              <div className="space-y-1">
-                <label className="text-[#6E655F]">Warehouse / Origin Location</label>
-                <input 
-                  type="text" 
-                  placeholder="e.g. Mercato / Kaliti Depot"
-                  value={formData.origin}
-                  onChange={(e) => setFormData({ ...formData, origin: e.target.value })}
-                  className="w-full bg-[#FAF7F2] border border-[#EFECE6] rounded-xl p-3 text-xs focus:outline-none"
-                />
-              </div>
-            </div>
-
-            <div className="space-y-1">
-              <label className="text-[#6E655F]">Image URL (Optional)</label>
-              <input 
-                type="url" 
-                placeholder="https://..."
-                value={formData.imageUrl}
-                onChange={(e) => setFormData({ ...formData, imageUrl: e.target.value })}
-                className="w-full bg-[#FAF7F2] border border-[#EFECE6] rounded-xl p-3 text-xs focus:outline-none"
-              />
-            </div>
-
-            <button 
-              type="submit" 
-              disabled={loading}
-              className="w-full bg-[#D9531E] hover:bg-[#B84216] text-white py-3.5 rounded-xl font-extrabold text-xs shadow-md transition">
-              {loading ? 'Submitting Listing...' : 'Publish Wholesale Inventory'}
-            </button>
-          </form>
+      <main className="max-w-6xl mx-auto px-6 py-8 space-y-6">
+        
+        {/* Navigation Tabs */}
+        <div className="flex border-b border-[#EFECE6] space-x-6 text-xs font-extrabold text-[#6E655F]">
+          <button 
+            onClick={() => setActiveTab('overview')} 
+            className={`pb-3 ${activeTab === 'overview' ? 'border-b-2 border-[#D9531E] text-[#D9531E]' : 'hover:text-[#2B231D]'}`}>
+            📊 ዳሽቦርድ (Overview)
+          </button>
+          <button 
+            onClick={() => setActiveTab('products')} 
+            className={`pb-3 ${activeTab === 'products' ? 'border-b-2 border-[#D9531E] text-[#D9531E]' : 'hover:text-[#2B231D]'}`}>
+            📦 ምርቶች (Products & Stock)
+          </button>
+          <button 
+            onClick={() => setActiveTab('orders')} 
+            className={`pb-3 ${activeTab === 'orders' ? 'border-b-2 border-[#D9531E] text-[#D9531E]' : 'hover:text-[#2B231D]'}`}>
+            🛍️ ትዕዛዞች (Orders Pipeline)
+          </button>
+          <button 
+            onClick={() => setActiveTab('profile')} 
+            className={`pb-3 ${activeTab === 'profile' ? 'border-b-2 border-[#D9531E] text-[#D9531E]' : 'hover:text-[#2B231D]'}`}>
+            ⚙️ ፕሮፋይል (Store Profile)
+          </button>
         </div>
+
+        {/* OVERVIEW TAB */}
+        {activeTab === 'overview' && (
+          <div className="space-y-6">
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+              <div className="bg-white p-5 rounded-2xl border border-[#EFECE6] shadow-sm">
+                <p className="text-[10px] font-black text-[#6E655F] uppercase">Total Sales</p>
+                <p className="text-xl font-black text-[#2B231D] mt-1">14,200 ETB</p>
+              </div>
+              <div className="bg-white p-5 rounded-2xl border border-[#EFECE6] shadow-sm">
+                <p className="text-[10px] font-black text-[#6E655F] uppercase">Pending Orders</p>
+                <p className="text-xl font-black text-[#D9531E] mt-1">{orders.filter(o => o.status !== 'Completed' && o.status !== 'Cancelled').length}</p>
+              </div>
+              <div className="bg-white p-5 rounded-2xl border border-[#EFECE6] shadow-sm">
+                <p className="text-[10px] font-black text-[#6E655F] uppercase">Completed Orders</p>
+                <p className="text-xl font-black text-[#137333] mt-1">{orders.filter(o => o.status === 'Completed').length}</p>
+              </div>
+              <div className="bg-white p-5 rounded-2xl border border-[#EFECE6] shadow-sm">
+                <p className="text-[10px] font-black text-[#6E655F] uppercase">Total Stock</p>
+                <p className="text-xl font-black text-[#2B231D] mt-1">{products.reduce((acc, p) => acc + p.stock, 0)} Units</p>
+              </div>
+              <div className="bg-white p-5 rounded-2xl border border-[#EFECE6] shadow-sm">
+                <p className="text-[10px] font-black text-[#6E655F] uppercase">Net Earnings</p>
+                <p className="text-xl font-black text-[#137333] mt-1">13,490 ETB</p>
+              </div>
+            </div>
+
+            <div className="bg-white rounded-2xl border border-[#EFECE6] p-6 shadow-sm">
+              <h3 className="text-xs font-black text-[#2B231D] uppercase tracking-wider mb-4">Quick Actions</h3>
+              <div className="flex gap-4">
+                <button onClick={() => setActiveTab('products')} className="bg-[#D9531E] text-white text-xs font-bold px-4 py-2.5 rounded-xl hover:bg-[#B84216]">
+                  + Add New Product
+                </button>
+                <button onClick={() => setActiveTab('orders')} className="bg-[#FAF7F2] border border-[#EFECE6] text-xs font-bold px-4 py-2.5 rounded-xl text-[#2B231D]">
+                  View Active Orders
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* PRODUCTS TAB */}
+        {activeTab === 'products' && (
+          <div className="space-y-6">
+            {/* Add Product Form */}
+            <div className="bg-white rounded-2xl border border-[#EFECE6] p-6 shadow-sm space-y-4">
+              <h3 className="text-xs font-black text-[#2B231D] uppercase tracking-wider">Add Wholesale Product</h3>
+              <form onSubmit={handleAddProduct} className="grid grid-cols-1 md:grid-cols-4 gap-3 text-xs font-bold">
+                <input
+                  type="text"
+                  placeholder="Product Name (ምርት ስም)"
+                  value={newProdName}
+                  onChange={(e) => setNewProdName(e.target.value)}
+                  className="px-4 py-2 border rounded-xl bg-[#FAF7F2]"
+                />
+                <select
+                  value={newProdCategory}
+                  onChange={(e) => setNewProdCategory(e.target.value)}
+                  className="px-4 py-2 border rounded-xl bg-[#FAF7F2]"
+                >
+                  <option>Grains (እህል)</option>
+                  <option>Grain & Pulses (ጥራጥሬ)</option>
+                  <option>Spices (ቅመማ ቅመም)</option>
+                </select>
+                <input
+                  type="number"
+                  placeholder="Price (ETB)"
+                  value={newProdPrice}
+                  onChange={(e) => setNewProdPrice(e.target.value)}
+                  className="px-4 py-2 border rounded-xl bg-[#FAF7F2]"
+                />
+                <input
+                  type="number"
+                  placeholder="Stock Quantity"
+                  value={newProdStock}
+                  onChange={(e) => setNewProdStock(e.target.value)}
+                  className="px-4 py-2 border rounded-xl bg-[#FAF7F2]"
+                />
+                <button type="submit" className="md:col-span-4 bg-[#D9531E] text-white py-2.5 rounded-xl font-bold">
+                  Publish Item
+                </button>
+              </form>
+            </div>
+
+            {/* Product Table */}
+            <div className="bg-white rounded-2xl border border-[#EFECE6] p-6 shadow-sm overflow-x-auto">
+              <h3 className="text-xs font-black text-[#2B231D] uppercase tracking-wider mb-4">Current Inventory</h3>
+              <table className="w-full text-left text-xs">
+                <thead>
+                  <tr className="border-b border-[#EFECE6] text-[#6E655F]">
+                    <th className="pb-3">Product</th>
+                    <th className="pb-3">Category</th>
+                    <th className="pb-3">Price</th>
+                    <th className="pb-3">Stock</th>
+                    <th className="pb-3">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-[#EFECE6]">
+                  {products.map((p) => (
+                    <tr key={p.id}>
+                      <td className="py-3 font-bold">{p.name}</td>
+                      <td className="py-3 text-[#6E655F]">{p.category}</td>
+                      <td className="py-3 font-bold">{p.price} ETB</td>
+                      <td className="py-3">{p.stock} units</td>
+                      <td className="py-3 space-x-2">
+                        <button onClick={() => deleteProduct(p.id)} className="text-red-600 hover:underline font-bold">
+                          Delete
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
+        {/* ORDERS TAB */}
+        {activeTab === 'orders' && (
+          <div className="bg-white rounded-2xl border border-[#EFECE6] p-6 shadow-sm space-y-4">
+            <h3 className="text-xs font-black text-[#2B231D] uppercase tracking-wider">Order Management Pipeline</h3>
+            <div className="space-y-4">
+              {orders.map((ord) => (
+                <div key={ord.id} className="border border-[#EFECE6] rounded-xl p-4 bg-[#FAF7F2] space-y-3">
+                  <div className="flex justify-between items-center text-xs font-bold">
+                    <span>{ord.id} - {ord.customerName} ({ord.subCity})</span>
+                    <span className="text-[#D9531E] font-black">{ord.total} ETB</span>
+                  </div>
+                  <p className="text-xs text-[#6E655F]">{ord.items}</p>
+                  <div className="flex items-center gap-2 text-xs">
+                    <span className="font-bold">Status:</span>
+                    <select
+                      value={ord.status}
+                      onChange={(e) => updateOrderStatus(ord.id, e.target.value as Order['status'])}
+                      className="px-3 py-1 border rounded-lg bg-white font-bold text-xs"
+                    >
+                      <option value="New">New</option>
+                      <option value="Confirmed">Confirmed</option>
+                      <option value="Preparing">Preparing</option>
+                      <option value="Out for delivery">Out for delivery</option>
+                      <option value="Completed">Completed</option>
+                      <option value="Cancelled">Cancelled</option>
+                    </select>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* PROFILE TAB */}
+        {activeTab === 'profile' && (
+          <div className="bg-white rounded-2xl border border-[#EFECE6] p-6 shadow-sm space-y-4">
+            <h3 className="text-xs font-black text-[#2B231D] uppercase tracking-wider">Verification & Store Profile</h3>
+            <div className="p-4 border border-[#EFECE6] rounded-xl bg-[#FAF7F2] space-y-2 text-xs">
+              <p><strong>Business Name:</strong> Addis Agro Wholesale</p>
+              <p><strong>Verification Status:</strong> <span className="text-green-700 font-bold">VERIFIED 🟢</span></p>
+              <p><strong>Operating Sub-City:</strong> Merkato / Addis Ketema</p>
+              <p><strong>License ID:</strong> ETH-AGRO-2026-99</p>
+            </div>
+          </div>
+        )}
+
       </main>
     </div>
   );
