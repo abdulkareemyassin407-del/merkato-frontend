@@ -100,23 +100,26 @@ export default function Home() {
   const [products, setProducts] = useState<Product[]>([]);
   const [cart, setCart] = useState<CartItem[]>([]);
   const [isCartOpen, setIsCartOpen] = useState(false);
-  
-  // Admin role check state (Hidden from regular users by default)
   const [isAdmin, setIsAdmin] = useState(false);
 
   const t = TRANSLATIONS[lang];
 
   useEffect(() => {
-    // Check if user is admin via URL param or local storage
+    // Restrict Admin view checking
     const params = new URLSearchParams(window.location.search);
     if (params.get('role') === 'admin' || localStorage.getItem('user_role') === 'admin') {
       setIsAdmin(true);
     }
 
+    // Fetch live items from backend (defaults to empty array if non-existent or failing)
     fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api/v1'}/products`)
       .then(res => res.json())
       .then(data => {
-        if (data.success) setProducts(data.data);
+        if (data && data.success && Array.isArray(data.data)) {
+          setProducts(data.data);
+        } else {
+          setProducts([]);
+        }
       })
       .catch(() => setProducts([]));
   }, []);
@@ -150,8 +153,8 @@ export default function Home() {
   const totalItemsCount = cart.reduce((sum, item) => sum + item.quantity, 0);
 
   const filteredProducts = products.filter(p => {
-    const matchesSearch = p.name.toLowerCase().includes(search.toLowerCase());
-    const matchesCategory = selectedCategory === 'All' || p.category.toLowerCase() === selectedCategory.toLowerCase();
+    const matchesSearch = p.name ? p.name.toLowerCase().includes(search.toLowerCase()) : false;
+    const matchesCategory = selectedCategory === 'All' || (p.category && p.category.toLowerCase() === selectedCategory.toLowerCase());
     return matchesSearch && matchesCategory;
   });
 
@@ -176,7 +179,7 @@ export default function Home() {
             <button onClick={() => setLang('ar')} className={`px-2 py-0.5 rounded-lg ${lang === 'ar' ? 'bg-white text-[#D9531E] shadow-sm' : 'text-[#6E655F]'}`}>عربي</button>
           </div>
 
-          {/* Seller Portal Link - NOW VISIBLE ON MOBILE */}
+          {/* Seller Portal Link */}
           <Link href="/seller/dashboard" className="bg-[#FAF7F2] hover:bg-[#EFECE6] border border-[#EFECE6] text-[#2B231D] px-2.5 py-1.5 rounded-xl text-xs font-bold transition whitespace-nowrap">
             {t.becomeSeller}
           </Link>
@@ -194,7 +197,7 @@ export default function Home() {
             )}
           </button>
 
-          {/* Admin Portal Link - RESTRICTED (Only visible to admin) */}
+          {/* Admin Portal Link (Only visible to admin) */}
           {isAdmin && (
             <Link href="/admin" className="bg-[#D9531E] text-white px-3 py-1.5 rounded-xl text-xs font-bold hover:bg-[#B84216] transition shadow-sm whitespace-nowrap">
               Admin
@@ -249,7 +252,6 @@ export default function Home() {
       <section className="max-w-7xl mx-auto px-4 lg:px-12 py-6">
         <div className="flex flex-col gap-3 mb-6">
           <h2 className="text-xl font-black">{t.categories}</h2>
-          {/* Scrollable category list on mobile */}
           <div className="flex overflow-x-auto pb-2 gap-2 text-xs font-bold no-scrollbar">
             {CATEGORIES.map((cat) => (
               <button 
