@@ -105,14 +105,17 @@ export default function Home() {
   const t = TRANSLATIONS[lang];
 
   useEffect(() => {
-    // Restrict Admin view checking
-    const params = new URLSearchParams(window.location.search);
-    if (params.get('role') === 'admin' || localStorage.getItem('user_role') === 'admin') {
-      setIsAdmin(true);
+    // Check local storage / URL search params safely on client mount
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get('role') === 'admin' || localStorage.getItem('user_role') === 'admin') {
+        setIsAdmin(true);
+      }
     }
 
-    // Fetch live items from backend (defaults to empty array if non-existent or failing)
-    fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api/v1'}/products`)
+    // Fetch live products
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api/v1';
+    fetch(`${apiUrl}/products`)
       .then(res => res.json())
       .then(data => {
         if (data && data.success && Array.isArray(data.data)) {
@@ -128,7 +131,9 @@ export default function Home() {
     setCart(prev => {
       const existing = prev.find(item => item.product.id === product.id);
       if (existing) {
-        return prev.map(item => item.product.id === product.id ? { ...item, quantity: item.quantity + 1 } : item);
+        return prev.map(item => 
+          item.product.id === product.id ? { ...item, quantity: item.quantity + 1 } : item
+        );
       }
       return [...prev, { product, quantity: 1 }];
     });
@@ -136,13 +141,17 @@ export default function Home() {
   };
 
   const updateCartQty = (productId: number, delta: number) => {
-    setCart(prev => prev.map(item => {
-      if (item.product.id === productId) {
-        const newQty = item.quantity + delta;
-        return newQty > 0 ? { ...item, quantity: newQty } : null;
-      }
-      return item;
-    }).filter(Boolean) as CartItem[]);
+    setCart(prev => 
+      prev
+        .map(item => {
+          if (item.product.id === productId) {
+            const newQty = item.quantity + delta;
+            return newQty > 0 ? { ...item, quantity: newQty } : null;
+          }
+          return item;
+        })
+        .filter(Boolean) as CartItem[]
+    );
   };
 
   const totalAmount = cart.reduce((sum, item) => {
@@ -164,7 +173,9 @@ export default function Home() {
       {/* Header */}
       <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-[#EFECE6] px-4 lg:px-12 py-3 flex items-center justify-between gap-2">
         <Link href="/" className="flex items-center gap-2">
-          <div className="w-9 h-9 bg-[#D9531E] rounded-xl flex items-center justify-center text-white font-black text-lg shadow-sm">HS</div>
+          <div className="w-9 h-9 bg-[#D9531E] rounded-xl flex items-center justify-center text-white font-black text-lg shadow-sm">
+            HS
+          </div>
           <div>
             <span className="text-lg lg:text-2xl font-black tracking-tight text-[#2B231D]">HABESHA SUQ</span>
             <span className="block text-[9px] font-extrabold text-[#D9531E] uppercase tracking-widest -mt-1">ሀበሻ ሱቅ</span>
@@ -174,9 +185,21 @@ export default function Home() {
         <div className="flex items-center gap-2 sm:gap-3">
           {/* Language Switcher */}
           <div className="bg-[#FAF7F2] p-1 rounded-xl border border-[#EFECE6] flex text-[11px] font-bold">
-            <button onClick={() => setLang('en')} className={`px-2 py-0.5 rounded-lg ${lang === 'en' ? 'bg-white text-[#D9531E] shadow-sm' : 'text-[#6E655F]'}`}>EN</button>
-            <button onClick={() => setLang('am')} className={`px-2 py-0.5 rounded-lg ${lang === 'am' ? 'bg-white text-[#D9531E] shadow-sm' : 'text-[#6E655F]'}`}>አማ</button>
-            <button onClick={() => setLang('ar')} className={`px-2 py-0.5 rounded-lg ${lang === 'ar' ? 'bg-white text-[#D9531E] shadow-sm' : 'text-[#6E655F]'}`}>عربي</button>
+            <button 
+              onClick={() => setLang('en')} 
+              className={`px-2 py-0.5 rounded-lg transition ${lang === 'en' ? 'bg-white text-[#D9531E] shadow-sm' : 'text-[#6E655F]'}`}>
+              EN
+            </button>
+            <button 
+              onClick={() => setLang('am')} 
+              className={`px-2 py-0.5 rounded-lg transition ${lang === 'am' ? 'bg-white text-[#D9531E] shadow-sm' : 'text-[#6E655F]'}`}>
+              አማ
+            </button>
+            <button 
+              onClick={() => setLang('ar')} 
+              className={`px-2 py-0.5 rounded-lg transition ${lang === 'ar' ? 'bg-white text-[#D9531E] shadow-sm' : 'text-[#6E655F]'}`}>
+              عربي
+            </button>
           </div>
 
           {/* Seller Portal Link */}
@@ -191,13 +214,13 @@ export default function Home() {
             <span>🛒</span>
             <span className="hidden sm:inline">Cart</span>
             {totalItemsCount > 0 && (
-              <span className="bg-[#D9531E] text-white text-[10px] font-extrabold px-1.5 py-0.2 rounded-full">
+              <span className="bg-[#D9531E] text-white text-[10px] font-extrabold px-1.5 py-0.5 rounded-full">
                 {totalItemsCount}
               </span>
             )}
           </button>
 
-          {/* Admin Portal Link (Only visible to admin) */}
+          {/* Admin Portal Link */}
           {isAdmin && (
             <Link href="/admin" className="bg-[#D9531E] text-white px-3 py-1.5 rounded-xl text-xs font-bold hover:bg-[#B84216] transition shadow-sm whitespace-nowrap">
               Admin
@@ -226,7 +249,7 @@ export default function Home() {
               placeholder={t.searchPlaceholder}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full bg-transparent text-sm font-semibold focus:outline-none"
+              className="w-full bg-transparent text-sm font-semibold focus:outline-none px-1"
             />
           </div>
 
@@ -238,12 +261,20 @@ export default function Home() {
         </div>
 
         <div className="bg-gradient-to-br from-[#D9531E] to-[#B84216] p-6 lg:p-8 rounded-3xl text-white shadow-lg space-y-3">
-          <span className="bg-white/20 backdrop-blur-md px-3 py-1 rounded-full text-xs font-bold">Verified Wholesale Orders</span>
+          <span className="bg-white/20 backdrop-blur-md px-3 py-1 rounded-full text-xs font-bold inline-block">
+            Verified Wholesale Orders
+          </span>
           <h2 className="text-xl lg:text-2xl font-black">{t.supportTitle}</h2>
-          <p className="text-white/80 text-xs">Add items to your cart and call central dispatch to process order fulfillment immediately.</p>
+          <p className="text-white/80 text-xs leading-relaxed">
+            Add items to your cart and call central dispatch to process order fulfillment immediately.
+          </p>
           <div className="pt-2 flex flex-wrap gap-2 text-xs font-black">
-            <a href="tel:0985077474" className="bg-white text-[#D9531E] px-3.5 py-1.5 rounded-xl shadow">📞 0985077474</a>
-            <a href="tel:0932265781" className="bg-white text-[#D9531E] px-3.5 py-1.5 rounded-xl shadow">📞 0932265781</a>
+            <a href="tel:0985077474" className="bg-white text-[#D9531E] px-3.5 py-1.5 rounded-xl shadow hover:bg-opacity-90 transition">
+              📞 0985077474
+            </a>
+            <a href="tel:0932265781" className="bg-white text-[#D9531E] px-3.5 py-1.5 rounded-xl shadow hover:bg-opacity-90 transition">
+              📞 0932265781
+            </a>
           </div>
         </div>
       </section>
@@ -257,7 +288,11 @@ export default function Home() {
               <button 
                 key={cat}
                 onClick={() => setSelectedCategory(cat)}
-                className={`px-3.5 py-2 rounded-xl border transition whitespace-nowrap ${selectedCategory === cat ? 'bg-[#D9531E] text-white border-[#D9531E]' : 'bg-white border-[#EFECE6] text-[#6E655F] hover:border-[#D9531E]'}`}>
+                className={`px-3.5 py-2 rounded-xl border transition whitespace-nowrap ${
+                  selectedCategory === cat 
+                    ? 'bg-[#D9531E] text-white border-[#D9531E]' 
+                    : 'bg-white border-[#EFECE6] text-[#6E655F] hover:border-[#D9531E]'
+                }`}>
                 {cat}
               </button>
             ))}
@@ -287,8 +322,12 @@ export default function Home() {
                   <span className="text-[10px] font-black uppercase text-[#D9531E] tracking-wider">{p.category}</span>
                   <h3 className="font-bold text-base mt-0.5 line-clamp-1">{p.name}</h3>
                   <div className="mt-2 space-y-0.5">
-                    <p className="text-base font-black text-[#2B231D]">ETB {p.price.toLocaleString()} <span className="text-xs text-[#6E655F] font-normal">/ unit</span></p>
-                    <p className="text-xs font-bold text-[#137333]">Bulk ({p.tierQty}+ units): ETB {p.tierPrice.toLocaleString()}</p>
+                    <p className="text-base font-black text-[#2B231D]">
+                      ETB {p.price.toLocaleString()} <span className="text-xs text-[#6E655F] font-normal">/ unit</span>
+                    </p>
+                    <p className="text-xs font-bold text-[#137333]">
+                      Bulk ({p.tierQty}+ units): ETB {p.tierPrice.toLocaleString()}
+                    </p>
                   </div>
                 </div>
 
@@ -298,7 +337,7 @@ export default function Home() {
                     className="w-full bg-[#D9531E] hover:bg-[#B84216] text-white py-2 rounded-xl font-extrabold text-xs transition">
                     {t.addToCart}
                   </button>
-                  <Link href={`/product/${p.id}`} className="block w-full text-center bg-[#FAF7F2] border border-[#EFECE6] py-1.5 rounded-xl font-bold text-xs text-[#6E655F]">
+                  <Link href={`/product/${p.id}`} className="block w-full text-center bg-[#FAF7F2] hover:bg-[#EFECE6] border border-[#EFECE6] py-1.5 rounded-xl font-bold text-xs text-[#6E655F] transition">
                     {t.viewDetails}
                   </Link>
                 </div>
@@ -332,11 +371,13 @@ export default function Home() {
                           <span>ETB {(activeUnitPrice * item.quantity).toLocaleString()}</span>
                         </div>
                         <div className="flex justify-between items-center text-xs text-[#6E655F]">
-                          <span>ETB {activeUnitPrice.toLocaleString()} / unit {isTierActive && <strong className="text-[#137333] ml-1">(Bulk Tier)</strong>}</span>
+                          <span>
+                            ETB {activeUnitPrice.toLocaleString()} / unit {isTierActive && <strong className="text-[#137333] ml-1">(Bulk Tier)</strong>}
+                          </span>
                           <div className="flex items-center border border-[#EFECE6] rounded-lg">
-                            <button onClick={() => updateCartQty(item.product.id, -1)} className="px-2 py-0.5 font-bold">-</button>
+                            <button onClick={() => updateCartQty(item.product.id, -1)} className="px-2 py-0.5 font-bold hover:bg-[#FAF7F2] rounded-l-lg">-</button>
                             <span className="px-2.5 font-bold text-black">{item.quantity}</span>
-                            <button onClick={() => updateCartQty(item.product.id, 1)} className="px-2 py-0.5 font-bold">+</button>
+                            <button onClick={() => updateCartQty(item.product.id, 1)} className="px-2 py-0.5 font-bold hover:bg-[#FAF7F2] rounded-r-lg">+</button>
                           </div>
                         </div>
                       </div>
@@ -354,7 +395,7 @@ export default function Home() {
                 </div>
                 <div className="bg-[#FAF7F2] p-4 rounded-xl border border-[#EFECE6] text-center space-y-2">
                   <p className="text-xs font-bold text-[#6E655F]">{t.readyToOrder}</p>
-                  <div className="flex justify-center gap-3 text-[#D9531E] font-extrabold text-xs sm:text-sm">
+                  <div className="flex justify-center flex-wrap gap-3 text-[#D9531E] font-extrabold text-xs sm:text-sm">
                     <a href="tel:0985077474">0985077474</a>
                     <a href="tel:0932265781">0932265781</a>
                     <a href="tel:0944669703">0944669703</a>
