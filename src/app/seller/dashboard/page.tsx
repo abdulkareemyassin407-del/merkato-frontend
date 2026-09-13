@@ -12,6 +12,7 @@ interface Product {
   tierPrice: number;
   tierQty: number;
   stock: number;
+  imageUrl?: string;
   status: 'In Stock' | 'Low Stock' | 'Out of Stock';
 }
 
@@ -25,16 +26,17 @@ interface Order {
   date: string;
 }
 
+// Synchronized 13 Categories matching Storefront & Database Schema
 const CATEGORIES = [
   'Flour',
   'Rice',
   'Grains',
   'Coffee',
-  'Macaroni & Pasta',
+  'Macroni and Pasta',
   'Packed Food',
   'Drinks',
   'Oil',
-  'Salt & Sugar',
+  'Salt and Sugar',
   'Sauces',
   'Canned',
   'Dairy',
@@ -63,6 +65,7 @@ const TRANSLATIONS = {
     noInventory: "No products added yet. Use '+ Add New Product' to list your items.",
     noOrders: "No active orders found for your account.",
     delete: "Delete",
+    imageUrlLabel: "Image URL (Optional)",
   },
   am: {
     dashboardTitle: "የአቅራቢዎች መቆጣጠሪያ ሰሌዳ",
@@ -85,6 +88,7 @@ const TRANSLATIONS = {
     noInventory: "እስካሁን ምንም ምርቶች አልተጨመሩም። ምርቶችዎን ለመዘርዘር '+ አዲስ ምርት ጨምር' ይጠቀሙ።",
     noOrders: "ለእርስዎ መለያ ምንም ንቁ ትዕዛዞች አልተገኙም።",
     delete: "ሰርዝ",
+    imageUrlLabel: "የምስል ሊንክ (አማራጭ)",
   },
   ar: {
     dashboardTitle: "لوحة تحكم البائع",
@@ -107,6 +111,7 @@ const TRANSLATIONS = {
     noInventory: "لم يتم إضافة منتجات بعد. استخدم '+ إضافة منتج جديد' لإدراج منتجاتك.",
     noOrders: "لا توجد طلبات نشطة لحسابك.",
     delete: "حذف",
+    imageUrlLabel: "رابط الصورة (اختياري)",
   }
 };
 
@@ -124,6 +129,7 @@ export default function SellerDashboard() {
   const [newTierPrice, setNewTierPrice] = useState('');
   const [newTierQty, setNewTierQty] = useState('10');
   const [newStock, setNewStock] = useState('');
+  const [newImageUrl, setNewImageUrl] = useState('');
 
   const t = TRANSLATIONS[lang];
 
@@ -166,6 +172,7 @@ export default function SellerDashboard() {
       tierPrice: Number(newTierPrice),
       tierQty: Number(newTierQty),
       stock: Number(newStock),
+      imageUrl: newImageUrl || undefined,
       status: Number(newStock) > 5 ? 'In Stock' : Number(newStock) > 0 ? 'Low Stock' : 'Out of Stock'
     };
 
@@ -183,6 +190,7 @@ export default function SellerDashboard() {
           setNewPrice('');
           setNewTierPrice('');
           setNewStock('');
+          setNewImageUrl('');
         }
       })
       .catch(err => console.error('Failed to add product:', err));
@@ -277,6 +285,7 @@ export default function SellerDashboard() {
               <table className="w-full text-left border-collapse text-xs">
                 <thead>
                   <tr className="border-b border-[#EFECE6] text-[#6E655F] uppercase font-black">
+                    <th className="py-3 px-2">Image</th>
                     <th className="py-3 px-2">{t.productName}</th>
                     <th className="py-3 px-2">{t.category}</th>
                     <th className="py-3 px-2">{t.price}</th>
@@ -289,6 +298,13 @@ export default function SellerDashboard() {
                 <tbody className="divide-y divide-[#EFECE6]">
                   {userProducts.map((p) => (
                     <tr key={p.id} className="font-semibold">
+                      <td className="py-3 px-2">
+                        {p.imageUrl ? (
+                          <img src={p.imageUrl} alt={p.name} className="w-8 h-8 rounded-lg object-cover border border-[#EFECE6]" />
+                        ) : (
+                          <div className="w-8 h-8 rounded-lg bg-[#FAF7F2] border border-[#EFECE6] flex items-center justify-center text-[10px]">📷</div>
+                        )}
+                      </td>
                       <td className="py-3 px-2 font-bold">{p.name}</td>
                       <td className="py-3 px-2 text-[#6E655F]">{p.category}</td>
                       <td className="py-3 px-2">ETB {p.price?.toLocaleString()}</td>
@@ -363,6 +379,11 @@ export default function SellerDashboard() {
                     <option key={cat} value={cat}>{cat}</option>
                   ))}
                 </select>
+              </div>
+
+              <div>
+                <label className="block mb-1 text-[#6E655F]">{t.imageUrlLabel}</label>
+                <input type="url" placeholder="https://..." value={newImageUrl} onChange={e => setNewImageUrl(e.target.value)} className="w-full border border-[#EFECE6] rounded-xl p-2.5 focus:outline-none font-normal" />
               </div>
 
               <div className="grid grid-cols-2 gap-2">

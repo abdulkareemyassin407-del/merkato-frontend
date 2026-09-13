@@ -18,22 +18,22 @@ interface CartItem {
   quantity: number;
 }
 
+// Exact 13 Category Keys synchronized with the Seller Add Item Form
 const CATEGORIES = [
-  'All',
-  'Grains',
-  'Flour',
-  'Rice',
-  'Oil',
-  'Spices',
-  'Coffee',
-  'Sugar',
-  'Pasta',
-  'Dairy',
-  'Canned',
-  'Nuts',
-  'Sauces',
-  'Baby',
-  'Salt',
+  { id: 'All', en: 'All Categories', am: 'ሁሉንም ምድቦች', ar: 'جميع الفئات' },
+  { id: 'Flour', en: 'Flour', am: 'ዱቄት', ar: 'دقيق' },
+  { id: 'Rice', en: 'Rice', am: 'ሩዝ', ar: 'أرز' },
+  { id: 'Grains', en: 'Grains', am: 'እህል እና ጥራጥሬ', ar: 'حبوب' },
+  { id: 'Coffee', en: 'Coffee', am: 'ቡና', ar: 'قهوة' },
+  { id: 'Macroni and Pasta', en: 'Macroni & Pasta', am: 'መኮሮኒ እና ፓስታ', ar: 'معكرونة وباستا' },
+  { id: 'Packed Food', en: 'Packed Food', am: 'ታሸጉ የምግብ ምርቶች', ar: 'أغذية مغلفة' },
+  { id: 'Drinks', en: 'Drinks', am: 'መጠጦች', ar: 'مشروبات' },
+  { id: 'Oil', en: 'Oil', am: 'ዘይት', ar: 'زيت' },
+  { id: 'Salt and Sugar', en: 'Salt & Sugar', am: 'ጨው እና ስኳር', ar: 'ملح وسكر' },
+  { id: 'Sauces', en: 'Sauces', am: 'ሶሶች እና ቅመሞች', ar: 'صلصات' },
+  { id: 'Canned', en: 'Canned', am: 'የታሸጉ አትክልቶች/ምግቦች', ar: 'أغذية معلبة' },
+  { id: 'Dairy', en: 'Dairy', am: 'የወተት ተዋጽኦዎች', ar: 'منتجات الألبان' },
+  { id: 'Baby Foods', en: 'Baby Foods', am: 'የሕፃናት ምግቦች', ar: 'أغذية الأطفال' },
 ];
 
 const TRANSLATIONS = {
@@ -105,7 +105,6 @@ export default function Home() {
   const t = TRANSLATIONS[lang];
 
   useEffect(() => {
-    // Check local storage / URL search params safely on client mount
     if (typeof window !== 'undefined') {
       const params = new URLSearchParams(window.location.search);
       if (params.get('role') === 'admin' || localStorage.getItem('user_role') === 'admin') {
@@ -113,7 +112,6 @@ export default function Home() {
       }
     }
 
-    // Fetch live products
     const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api/v1';
     fetch(`${apiUrl}/products`)
       .then(res => res.json())
@@ -286,14 +284,14 @@ export default function Home() {
           <div className="flex overflow-x-auto pb-2 gap-2 text-xs font-bold no-scrollbar">
             {CATEGORIES.map((cat) => (
               <button 
-                key={cat}
-                onClick={() => setSelectedCategory(cat)}
+                key={cat.id}
+                onClick={() => setSelectedCategory(cat.id)}
                 className={`px-3.5 py-2 rounded-xl border transition whitespace-nowrap ${
-                  selectedCategory === cat 
+                  selectedCategory === cat.id 
                     ? 'bg-[#D9531E] text-white border-[#D9531E]' 
                     : 'bg-white border-[#EFECE6] text-[#6E655F] hover:border-[#D9531E]'
                 }`}>
-                {cat}
+                {cat[lang]}
               </button>
             ))}
           </div>
