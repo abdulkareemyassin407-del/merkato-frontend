@@ -9,11 +9,13 @@ interface Product {
   sellerId: string;
   name: string;
   category: string;
-  price: number;
-  tierPrice: number;
-  tierQty: number;
+  kgPrice?: number;
+  weightPerPiece: number; // e.g., 1 piece = 25 kg
+  tierPrice: number;      // Price in bulk
+  minBulkQty: number;     // Minimum order in bulk
+  maxBulkQty: number;     // Maximum order in bulk
   stock: number;
-  imageUrl?: string;
+  imageUrl: string;
   status: 'In Stock' | 'Low Stock' | 'Out of Stock';
 }
 
@@ -58,15 +60,20 @@ const TRANSLATIONS = {
     pendingOrders: "My Pending Orders",
     productName: "Product Name",
     category: "Category",
-    price: "Base Price (ETB)",
-    tierPrice: "Bulk Price (ETB)",
-    stock: "Stock Qty",
+    kgPrice: "Price per Kg (ETB)",
+    weightPerPiece: "Kg per Piece/Bag (e.g. 25kg)",
+    bulkPrice: "Price in Bulk (ETB)",
+    minBulkQty: "Min Bulk Order Qty",
+    maxBulkQty: "Max Bulk Order Qty",
+    stock: "Stock Qty (Pieces)",
     status: "Status",
     actions: "Actions",
     noInventory: "No products added yet. Use '+ Add New Product' to list your items.",
     noOrders: "No active orders found for your account.",
     delete: "Delete",
-    imageUrlLabel: "Image URL (Optional)",
+    imageUrlLabel: "Image URL",
+    saveProduct: "Save Product",
+    requiredNotice: "* Required fields",
   },
   am: {
     dashboardTitle: "የአቅራቢዎች መቆጣጠሪያ ሰሌዳ",
@@ -81,15 +88,20 @@ const TRANSLATIONS = {
     pendingOrders: "የእኔ በመጠባበቅ ላይ ያሉ ትዕዛዞች",
     productName: "የምርት ስም",
     category: "ምድብ",
-    price: "መደበኛ ዋጋ (ETB)",
-    tierPrice: "የጅምላ ዋጋ (ETB)",
-    stock: "የክምችት መጠን",
+    kgPrice: "የአንድ ኪሎ ዋጋ (ETB)",
+    weightPerPiece: "በአንድ ጆንያ/ቁራጭ የኪሎ መጠን (ምሳሌ፡ 25 ኪሎ)",
+    bulkPrice: "የጅምላ ዋጋ (ETB)",
+    minBulkQty: "አነስተኛ የጅምላ ትዕዛዝ ብዛት",
+    maxBulkQty: "ከፍተኛ የጅምላ ትዕዛዝ ብዛት",
+    stock: "የክምችት መጠን (በቁራጭ/ጆንያ)",
     status: "ሁኔታ",
     actions: "እርምጃዎች",
     noInventory: "እስካሁን ምንም ምርቶች አልተጨመሩም። ምርቶችዎን ለመዘርዘር '+ አዲስ ምርት ጨምር' ይጠቀሙ።",
     noOrders: "ለእርስዎ መለያ ምንም ንቁ ትዕዛዞች አልተገኙም።",
     delete: "ሰርዝ",
-    imageUrlLabel: "የምስል ሊንክ (አማራጭ)",
+    imageUrlLabel: "የምስል ሊንክ/ፎቶ",
+    saveProduct: "ምርቱን መዝግብ",
+    requiredNotice: "* ግዴታ የሚሞሉ መስኮች",
   },
   ar: {
     dashboardTitle: "لوحة تحكم البائع",
@@ -104,15 +116,20 @@ const TRANSLATIONS = {
     pendingOrders: "طلباتي قيد الانتظار",
     productName: "اسم المنتج",
     category: "الفئة",
-    price: "السعر الأساسي (ETB)",
-    tierPrice: "سعر الجملة (ETB)",
-    stock: "كمية المخزون",
+    kgPrice: "السعر لكل كيلو (ETB)",
+    weightPerPiece: "الوزن بالكرتون/القطعة (مثال: 25 كجم)",
+    bulkPrice: "سعر الجملة (ETB)",
+    minBulkQty: "أدنى كمية للطلب بالجملة",
+    maxBulkQty: "أقصى كمية للطلب بالجملة",
+    stock: "كمية المخزون (بالقطعة)",
     status: "الحالة",
     actions: "الإجراءات",
     noInventory: "لم يتم إضافة منتجات بعد. استخدم '+ إضافة منتج جديد' لإدراج منتجاتك.",
     noOrders: "لا توجد طلبات نشطة لحسابك.",
     delete: "حذف",
-    imageUrlLabel: "رابط الصورة (اختياري)",
+    imageUrlLabel: "رابط الصورة",
+    saveProduct: "حفظ المنتج",
+    requiredNotice: "* الحقول المطلوبة",
   }
 };
 
@@ -125,14 +142,16 @@ export default function SellerDashboard() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [showAddModal, setShowAddModal] = useState(false);
 
-  // Form State for New Product
+  // Updated Form State with Custom and Required Fields
   const [newProductName, setNewProductName] = useState('');
   const [newCategory, setNewCategory] = useState(CATEGORIES[0]);
-  const [newPrice, setNewPrice] = useState('');
-  const [newTierPrice, setNewTierPrice] = useState('');
-  const [newTierQty, setNewTierQty] = useState('10');
-  const [newStock, setNewStock] = useState('');
   const [newImageUrl, setNewImageUrl] = useState('');
+  const [newKgPrice, setNewKgPrice] = useState('');
+  const [newWeightPerPiece, setNewWeightPerPiece] = useState('25');
+  const [newBulkPrice, setNewBulkPrice] = useState('');
+  const [newMinBulkQty, setNewMinBulkQty] = useState('1');
+  const [newMaxBulkQty, setNewMaxBulkQty] = useState('100');
+  const [newStock, setNewStock] = useState('');
 
   const t = TRANSLATIONS[lang];
 
@@ -186,15 +205,18 @@ export default function SellerDashboard() {
   // Handle adding product assigned to the logged-in seller ID
   const handleAddProduct = (e: React.FormEvent) => {
     e.preventDefault();
+
     const productPayload = {
       sellerId,
       name: newProductName,
       category: newCategory,
-      price: Number(newPrice),
-      tierPrice: Number(newTierPrice),
-      tierQty: Number(newTierQty),
+      imageUrl: newImageUrl,
+      kgPrice: newKgPrice ? Number(newKgPrice) : undefined,
+      weightPerPiece: Number(newWeightPerPiece),
+      tierPrice: Number(newBulkPrice),
+      minBulkQty: Number(newMinBulkQty),
+      maxBulkQty: Number(newMaxBulkQty),
       stock: Number(newStock),
-      imageUrl: newImageUrl || undefined,
       status: Number(newStock) > 5 ? 'In Stock' : Number(newStock) > 0 ? 'Low Stock' : 'Out of Stock'
     };
 
@@ -209,10 +231,13 @@ export default function SellerDashboard() {
           setProducts(prev => [...prev, data.data]);
           setShowAddModal(false);
           setNewProductName('');
-          setNewPrice('');
-          setNewTierPrice('');
-          setNewStock('');
           setNewImageUrl('');
+          setNewKgPrice('');
+          setNewWeightPerPiece('25');
+          setNewBulkPrice('');
+          setNewMinBulkQty('1');
+          setNewMaxBulkQty('100');
+          setNewStock('');
         }
       })
       .catch(err => console.error('Failed to add product:', err));
@@ -227,7 +252,6 @@ export default function SellerDashboard() {
         setProducts(prev => prev.filter(p => p.id !== id));
       })
       .catch(() => {
-        // Fallback for UI state update if API fails or runs in memory
         setProducts(prev => prev.filter(p => p.id !== id));
       });
   };
@@ -274,7 +298,7 @@ export default function SellerDashboard() {
           </div>
         </div>
 
-        {/* Overview Cards (Only for Logged-In User) */}
+        {/* Overview Cards */}
         <div>
           <h2 className="text-sm font-black text-[#6E655F] uppercase tracking-wider mb-3">{t.overview}</h2>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -293,7 +317,7 @@ export default function SellerDashboard() {
           </div>
         </div>
 
-        {/* Product & Stock Inventory Table */}
+        {/* Inventory Table */}
         <div className="bg-white rounded-2xl border border-[#EFECE6] p-6 shadow-sm space-y-4">
           <div className="flex justify-between items-center">
             <h2 className="text-lg font-black">{t.inventoryTitle}</h2>
@@ -310,8 +334,10 @@ export default function SellerDashboard() {
                     <th className="py-3 px-2">Image</th>
                     <th className="py-3 px-2">{t.productName}</th>
                     <th className="py-3 px-2">{t.category}</th>
-                    <th className="py-3 px-2">{t.price}</th>
-                    <th className="py-3 px-2">{t.tierPrice}</th>
+                    <th className="py-3 px-2">{t.kgPrice}</th>
+                    <th className="py-3 px-2">{t.weightPerPiece}</th>
+                    <th className="py-3 px-2">{t.bulkPrice}</th>
+                    <th className="py-3 px-2">Bulk Range (Min-Max)</th>
                     <th className="py-3 px-2">{t.stock}</th>
                     <th className="py-3 px-2">{t.status}</th>
                     <th className="py-3 px-2">{t.actions}</th>
@@ -329,8 +355,10 @@ export default function SellerDashboard() {
                       </td>
                       <td className="py-3 px-2 font-bold">{p.name}</td>
                       <td className="py-3 px-2 text-[#6E655F]">{p.category}</td>
-                      <td className="py-3 px-2">ETB {p.price?.toLocaleString()}</td>
-                      <td className="py-3 px-2 text-[#137333]">ETB {p.tierPrice?.toLocaleString()} ({p.tierQty}+)</td>
+                      <td className="py-3 px-2">{p.kgPrice ? `ETB ${p.kgPrice.toLocaleString()}` : '-'}</td>
+                      <td className="py-3 px-2">{p.weightPerPiece} kg</td>
+                      <td className="py-3 px-2 text-[#137333]">ETB {p.tierPrice?.toLocaleString()}</td>
+                      <td className="py-3 px-2">{p.minBulkQty} - {p.maxBulkQty} pcs</td>
                       <td className="py-3 px-2">{p.stock}</td>
                       <td className="py-3 px-2">
                         <span className={`px-2 py-0.5 rounded-full text-[10px] font-black uppercase ${
@@ -354,7 +382,7 @@ export default function SellerDashboard() {
           )}
         </div>
 
-        {/* Order Pipeline Section (Only User Orders) */}
+        {/* Order Pipeline Section */}
         <div id="orders" className="bg-white rounded-2xl border border-[#EFECE6] p-6 shadow-sm space-y-4">
           <h2 className="text-lg font-black">{t.orderPipeline}</h2>
 
@@ -381,19 +409,41 @@ export default function SellerDashboard() {
 
       {/* Add Product Modal */}
       {showAddModal && (
-        <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-4">
+        <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
+          <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-4 my-8">
             <div className="flex justify-between items-center border-b border-[#EFECE6] pb-3">
               <h3 className="font-black text-base">{t.addProduct}</h3>
               <button onClick={() => setShowAddModal(false)} className="text-lg font-bold">✕</button>
             </div>
 
             <form onSubmit={handleAddProduct} className="space-y-3 text-xs font-bold">
+              {/* Product Photo URL (Required) */}
               <div>
-                <label className="block mb-1 text-[#6E655F]">{t.productName}</label>
-                <input required type="text" value={newProductName} onChange={e => setNewProductName(e.target.value)} className="w-full border border-[#EFECE6] rounded-xl p-2.5 focus:outline-none" />
+                <label className="block mb-1 text-[#6E655F]">{t.imageUrlLabel} *</label>
+                <input 
+                  required 
+                  type="url" 
+                  placeholder="https://example.com/photo.jpg" 
+                  value={newImageUrl} 
+                  onChange={e => setNewImageUrl(e.target.value)} 
+                  className="w-full border border-[#EFECE6] rounded-xl p-2.5 focus:outline-none font-normal" 
+                />
               </div>
 
+              {/* Product Name (Custom/Required) */}
+              <div>
+                <label className="block mb-1 text-[#6E655F]">{t.productName} *</label>
+                <input 
+                  required 
+                  type="text" 
+                  placeholder="e.g. Special Teff / Ethiopian Coffee"
+                  value={newProductName} 
+                  onChange={e => setNewProductName(e.target.value)} 
+                  className="w-full border border-[#EFECE6] rounded-xl p-2.5 focus:outline-none" 
+                />
+              </div>
+
+              {/* Category */}
               <div>
                 <label className="block mb-1 text-[#6E655F]">{t.category}</label>
                 <select value={newCategory} onChange={e => setNewCategory(e.target.value)} className="w-full border border-[#EFECE6] rounded-xl p-2.5 focus:outline-none bg-white">
@@ -403,35 +453,87 @@ export default function SellerDashboard() {
                 </select>
               </div>
 
-              <div>
-                <label className="block mb-1 text-[#6E655F]">{t.imageUrlLabel}</label>
-                <input type="url" placeholder="https://..." value={newImageUrl} onChange={e => setNewImageUrl(e.target.value)} className="w-full border border-[#EFECE6] rounded-xl p-2.5 focus:outline-none font-normal" />
-              </div>
-
+              {/* Kg Price (Custom/Optional) & Weight Per Piece (Required) */}
               <div className="grid grid-cols-2 gap-2">
                 <div>
-                  <label className="block mb-1 text-[#6E655F]">{t.price}</label>
-                  <input required type="number" value={newPrice} onChange={e => setNewPrice(e.target.value)} className="w-full border border-[#EFECE6] rounded-xl p-2.5 focus:outline-none" />
+                  <label className="block mb-1 text-[#6E655F]">{t.kgPrice}</label>
+                  <input 
+                    type="number" 
+                    placeholder="e.g. 120"
+                    value={newKgPrice} 
+                    onChange={e => setNewKgPrice(e.target.value)} 
+                    className="w-full border border-[#EFECE6] rounded-xl p-2.5 focus:outline-none" 
+                  />
                 </div>
                 <div>
-                  <label className="block mb-1 text-[#6E655F]">{t.tierPrice}</label>
-                  <input required type="number" value={newTierPrice} onChange={e => setNewTierPrice(e.target.value)} className="w-full border border-[#EFECE6] rounded-xl p-2.5 focus:outline-none" />
+                  <label className="block mb-1 text-[#6E655F]">{t.weightPerPiece} *</label>
+                  <input 
+                    required 
+                    type="number" 
+                    placeholder="25"
+                    value={newWeightPerPiece} 
+                    onChange={e => setNewWeightPerPiece(e.target.value)} 
+                    className="w-full border border-[#EFECE6] rounded-xl p-2.5 focus:outline-none" 
+                  />
                 </div>
               </div>
 
+              {/* Price in Bulk (Required) & Stock (Required) */}
               <div className="grid grid-cols-2 gap-2">
                 <div>
-                  <label className="block mb-1 text-[#6E655F]">Bulk Minimum Qty</label>
-                  <input required type="number" value={newTierQty} onChange={e => setNewTierQty(e.target.value)} className="w-full border border-[#EFECE6] rounded-xl p-2.5 focus:outline-none" />
+                  <label className="block mb-1 text-[#6E655F]">{t.bulkPrice} *</label>
+                  <input 
+                    required 
+                    type="number" 
+                    placeholder="e.g. 2500"
+                    value={newBulkPrice} 
+                    onChange={e => setNewBulkPrice(e.target.value)} 
+                    className="w-full border border-[#EFECE6] rounded-xl p-2.5 focus:outline-none" 
+                  />
                 </div>
                 <div>
-                  <label className="block mb-1 text-[#6E655F]">{t.stock}</label>
-                  <input required type="number" value={newStock} onChange={e => setNewStock(e.target.value)} className="w-full border border-[#EFECE6] rounded-xl p-2.5 focus:outline-none" />
+                  <label className="block mb-1 text-[#6E655F]">{t.stock} *</label>
+                  <input 
+                    required 
+                    type="number" 
+                    placeholder="50"
+                    value={newStock} 
+                    onChange={e => setNewStock(e.target.value)} 
+                    className="w-full border border-[#EFECE6] rounded-xl p-2.5 focus:outline-none" 
+                  />
                 </div>
               </div>
+
+              {/* Min Bulk Qty (Required) & Max Bulk Qty (Required) */}
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label className="block mb-1 text-[#6E655F]">{t.minBulkQty} *</label>
+                  <input 
+                    required 
+                    type="number" 
+                    placeholder="1"
+                    value={newMinBulkQty} 
+                    onChange={e => setNewMinBulkQty(e.target.value)} 
+                    className="w-full border border-[#EFECE6] rounded-xl p-2.5 focus:outline-none" 
+                  />
+                </div>
+                <div>
+                  <label className="block mb-1 text-[#6E655F]">{t.maxBulkQty} *</label>
+                  <input 
+                    required 
+                    type="number" 
+                    placeholder="100"
+                    value={newMaxBulkQty} 
+                    onChange={e => setNewMaxBulkQty(e.target.value)} 
+                    className="w-full border border-[#EFECE6] rounded-xl p-2.5 focus:outline-none" 
+                  />
+                </div>
+              </div>
+
+              <p className="text-[10px] text-[#6E655F] font-normal">{t.requiredNotice}</p>
 
               <button type="submit" className="w-full bg-[#D9531E] text-white py-3 rounded-xl font-black text-xs hover:bg-[#B84216] transition mt-2">
-                Save Product
+                {t.saveProduct}
               </button>
             </form>
           </div>
