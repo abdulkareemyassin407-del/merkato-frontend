@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 
 interface Product {
   id: number;
@@ -116,6 +117,8 @@ const TRANSLATIONS = {
 };
 
 export default function SellerDashboard() {
+  const router = useRouter();
+  const [isAuthorized, setIsAuthorized] = useState(false);
   const [lang, setLang] = useState<'en' | 'am' | 'ar'>('am');
   const [sellerId, setSellerId] = useState<string>('');
   const [products, setProducts] = useState<Product[]>([]);
@@ -134,6 +137,17 @@ export default function SellerDashboard() {
   const t = TRANSLATIONS[lang];
 
   useEffect(() => {
+    // Check Authentication Status
+    const savedAuth = localStorage.getItem('user_auth');
+    const authData = savedAuth ? JSON.parse(savedAuth) : null;
+
+    if (!authData || !authData.isLoggedIn) {
+      router.push('/login');
+      return;
+    } else {
+      setIsAuthorized(true);
+    }
+
     // 1. Retrieve logged-in seller ID or set a default unique session ID
     let currentSeller = localStorage.getItem('logged_seller_id');
     if (!currentSeller) {
@@ -154,7 +168,15 @@ export default function SellerDashboard() {
         }
       })
       .catch(() => setProducts([]));
-  }, []);
+  }, [router]);
+
+  if (!isAuthorized) {
+    return (
+      <div className="min-h-screen bg-[#FAF7F2] flex items-center justify-center text-xs font-bold text-[#6E655F]">
+        Checking login status...
+      </div>
+    );
+  }
 
   // Filter Overview & Data strictly for logged-in user
   const userProducts = products.filter(p => p.sellerId === sellerId);

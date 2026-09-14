@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 
 interface Product {
   id: number;
@@ -25,7 +26,7 @@ const CATEGORIES = [
   { id: 'Rice', en: 'Rice', am: 'ሩዝ', ar: 'أرز' },
   { id: 'Grains', en: 'Grains', am: 'እህል እና ጥራጥሬ', ar: 'حبوب' },
   { id: 'Coffee', en: 'Coffee', am: 'ቡና', ar: 'قهوة' },
-  { id: 'Macroni and Pasta', en: 'Macroni & Pasta', am: 'መኮሮኒ እና ፓስታ', ar: 'معكرونة وباستا' },
+  { id: 'Macroni and Pasta', en: 'Macroni & Pasta', am: 'መኮሮኒ እና ፓስታ', ar: 'معكرونة وباስታ' },
   { id: 'Packed Food', en: 'Packed Food', am: 'ታሸጉ የምግብ ምርቶች', ar: 'أغذية مغلفة' },
   { id: 'Drinks', en: 'Drinks', am: 'መጠጦች', ar: 'مشروبات' },
   { id: 'Oil', en: 'Oil', am: 'ዘይት', ar: 'زيت' },
@@ -94,6 +95,7 @@ const TRANSLATIONS = {
 };
 
 export default function Home() {
+  const router = useRouter();
   const [lang, setLang] = useState<'en' | 'am' | 'ar'>('am');
   const [search, setSearch] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
@@ -125,17 +127,41 @@ export default function Home() {
       .catch(() => setProducts([]));
   }, []);
 
+  const handleProtectedAction = (action: () => void) => {
+    const savedAuth = localStorage.getItem('user_auth');
+    const authData = savedAuth ? JSON.parse(savedAuth) : null;
+
+    if (!authData || !authData.isLoggedIn) {
+      router.push('/login');
+    } else {
+      action();
+    }
+  };
+
+  const handleSellerPortalClick = () => {
+    const savedAuth = localStorage.getItem('user_auth');
+    const authData = savedAuth ? JSON.parse(savedAuth) : null;
+
+    if (!authData || !authData.isLoggedIn) {
+      router.push('/login');
+    } else {
+      router.push('/seller/dashboard');
+    }
+  };
+
   const addToCart = (product: Product) => {
-    setCart(prev => {
-      const existing = prev.find(item => item.product.id === product.id);
-      if (existing) {
-        return prev.map(item => 
-          item.product.id === product.id ? { ...item, quantity: item.quantity + 1 } : item
-        );
-      }
-      return [...prev, { product, quantity: 1 }];
+    handleProtectedAction(() => {
+      setCart(prev => {
+        const existing = prev.find(item => item.product.id === product.id);
+        if (existing) {
+          return prev.map(item => 
+            item.product.id === product.id ? { ...item, quantity: item.quantity + 1 } : item
+          );
+        }
+        return [...prev, { product, quantity: 1 }];
+      });
+      setIsCartOpen(true);
     });
-    setIsCartOpen(true);
   };
 
   const updateCartQty = (productId: number, delta: number) => {
@@ -201,9 +227,11 @@ export default function Home() {
           </div>
 
           {/* Seller Portal Link */}
-          <Link href="/seller/dashboard" className="bg-[#FAF7F2] hover:bg-[#EFECE6] border border-[#EFECE6] text-[#2B231D] px-2.5 py-1.5 rounded-xl text-xs font-bold transition whitespace-nowrap">
+          <button 
+            onClick={handleSellerPortalClick} 
+            className="bg-[#FAF7F2] hover:bg-[#EFECE6] border border-[#EFECE6] text-[#2B231D] px-2.5 py-1.5 rounded-xl text-xs font-bold transition whitespace-nowrap">
             {t.becomeSeller}
-          </Link>
+          </button>
 
           {/* Order Cart Button */}
           <button 
