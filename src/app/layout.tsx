@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import './globals.css';
+import Footer from './components/footer'; // Adjust path if your alias uses '@/app/components/footer'
 
 export const metadata: Metadata = {
   title: 'Merkato - Wholesale Food Marketplace in Addis Ababa',
@@ -14,7 +15,10 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body>{children}</body>
+      <body className="min-h-screen flex flex-col justify-between">
+        <main className="flex-grow">{children}</main>
+        <Footer lang="am" />
+      </body>
     </html>
   );
 }
