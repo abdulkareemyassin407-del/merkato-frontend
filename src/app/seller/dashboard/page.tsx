@@ -29,21 +29,21 @@ interface Order {
   date: string;
 }
 
-// Synchronized 13 Categories matching Storefront & Database Schema
-const CATEGORIES = [
-  'Flour',
-  'Rice',
-  'Grains',
-  'Coffee',
-  'Macroni and Pasta',
-  'Packed Food',
-  'Drinks',
-  'Oil',
-  'Salt and Sugar',
-  'Sauces',
-  'Canned',
-  'Dairy',
-  'Baby Foods',
+// Multi-language translated categories matching Storefront & Database Schema
+const CATEGORIES_TRANSLATED = [
+  { key: 'Flour', en: 'Flour', am: 'ዱቄት', ar: 'دقيق' },
+  { key: 'Rice', en: 'Rice', am: 'ሩዝ', ar: 'أرز' },
+  { key: 'Grains', en: 'Grains', am: 'እህል', ar: 'حبوب' },
+  { key: 'Coffee', en: 'Coffee', am: 'ቡና', ar: 'قهوة' },
+  { key: 'Macroni and Pasta', en: 'Macroni and Pasta', am: 'ማካሮኒ እና ፓስታ', ar: 'معكرونة و بستا' },
+  { key: 'Packed Food', en: 'Packed Food', am: 'የታሸጉ ምግቦች', ar: 'أطعمة معلبة' },
+  { key: 'Drinks', en: 'Drinks', am: 'መጠጦች', ar: 'مشروبات' },
+  { key: 'Oil', en: 'Oil', am: 'ዘይት', ar: 'زيت' },
+  { key: 'Salt and Sugar', en: 'Salt and Sugar', am: 'ጨው እና ስኳር', ar: 'ملح وسكر' },
+  { key: 'Sauces', en: 'Sauces', am: 'ሶሶች', ar: 'صلصات' },
+  { key: 'Canned', en: 'Canned', am: 'የታሸጉ የቆርቆሮ ምግቦች', ar: 'أغذية محفوظة' },
+  { key: 'Dairy', en: 'Dairy', am: 'የወተት ተዋጽኦዎች', ar: 'منتجات الألبان' },
+  { key: 'Baby Foods', en: 'Baby Foods', am: 'የሕፃናት ምግቦች', ar: 'أغذية الأطفال' },
 ];
 
 const TRANSLATIONS = {
@@ -71,7 +71,7 @@ const TRANSLATIONS = {
     noInventory: "No products added yet. Use '+ Add New Product' to list your items.",
     noOrders: "No active orders found for your account.",
     delete: "Delete",
-    imageUrlLabel: "Image URL",
+    imageFileLabel: "Product Photo (Upload / Camera)",
     saveProduct: "Save Product",
     requiredNotice: "* Required fields",
   },
@@ -99,7 +99,7 @@ const TRANSLATIONS = {
     noInventory: "እስካሁን ምንም ምርቶች አልተጨመሩም። ምርቶችዎን ለመዘርዘር '+ አዲስ ምርት ጨምር' ይጠቀሙ።",
     noOrders: "ለእርስዎ መለያ ምንም ንቁ ትዕዛዞች አልተገኙም።",
     delete: "ሰርዝ",
-    imageUrlLabel: "የምስል ሊንክ/ፎቶ",
+    imageFileLabel: "የምርት ፎቶ (ከፋይል ወይም ካሜራ ይምረጡ)",
     saveProduct: "ምርቱን መዝግብ",
     requiredNotice: "* ግዴታ የሚሞሉ መስኮች",
   },
@@ -127,7 +127,7 @@ const TRANSLATIONS = {
     noInventory: "لم يتم إضافة منتجات بعد. استخدم '+ إضافة منتج جديد' لإدراج منتجاتك.",
     noOrders: "لا توجد طلبات نشطة لحسابك.",
     delete: "حذف",
-    imageUrlLabel: "رابط الصورة",
+    imageFileLabel: "صورة المنتج (تحميل من الجهاز أو الكاميرا)",
     saveProduct: "حفظ المنتج",
     requiredNotice: "* الحقول المطلوبة",
   }
@@ -142,10 +142,10 @@ export default function SellerDashboard() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [showAddModal, setShowAddModal] = useState(false);
 
-  // Updated Form State with Custom and Required Fields
+  // Form State
   const [newProductName, setNewProductName] = useState('');
-  const [newCategory, setNewCategory] = useState(CATEGORIES[0]);
-  const [newImageUrl, setNewImageUrl] = useState('');
+  const [newCategory, setNewCategory] = useState(CATEGORIES_TRANSLATED[0].key);
+  const [newImageBase64, setNewImageBase64] = useState('');
   const [newKgPrice, setNewKgPrice] = useState('');
   const [newWeightPerPiece, setNewWeightPerPiece] = useState('25');
   const [newBulkPrice, setNewBulkPrice] = useState('');
@@ -167,7 +167,7 @@ export default function SellerDashboard() {
       setIsAuthorized(true);
     }
 
-    // 1. Retrieve logged-in seller ID or set a default unique session ID
+    // Retrieve logged-in seller ID or set default session ID
     let currentSeller = localStorage.getItem('logged_seller_id');
     if (!currentSeller) {
       currentSeller = 'seller_' + Date.now();
@@ -175,7 +175,7 @@ export default function SellerDashboard() {
     }
     setSellerId(currentSeller);
 
-    // 2. Fetch products and filter strictly by logged-in seller ID
+    // Fetch products and filter strictly by logged-in seller ID
     fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api/v1'}/products`)
       .then(res => res.json())
       .then(data => {
@@ -188,6 +188,18 @@ export default function SellerDashboard() {
       })
       .catch(() => setProducts([]));
   }, [router]);
+
+  // Convert uploaded image file to Base64 Data URL
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setNewImageBase64(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
 
   if (!isAuthorized) {
     return (
@@ -210,7 +222,7 @@ export default function SellerDashboard() {
       sellerId,
       name: newProductName,
       category: newCategory,
-      imageUrl: newImageUrl,
+      imageUrl: newImageBase64,
       kgPrice: newKgPrice ? Number(newKgPrice) : undefined,
       weightPerPiece: Number(newWeightPerPiece),
       tierPrice: Number(newBulkPrice),
@@ -231,7 +243,7 @@ export default function SellerDashboard() {
           setProducts(prev => [...prev, data.data]);
           setShowAddModal(false);
           setNewProductName('');
-          setNewImageUrl('');
+          setNewImageBase64('');
           setNewKgPrice('');
           setNewWeightPerPiece('25');
           setNewBulkPrice('');
@@ -354,7 +366,9 @@ export default function SellerDashboard() {
                         )}
                       </td>
                       <td className="py-3 px-2 font-bold">{p.name}</td>
-                      <td className="py-3 px-2 text-[#6E655F]">{p.category}</td>
+                      <td className="py-3 px-2 text-[#6E655F]">
+                        {CATEGORIES_TRANSLATED.find(c => c.key === p.category)?.[lang] || p.category}
+                      </td>
                       <td className="py-3 px-2">{p.kgPrice ? `ETB ${p.kgPrice.toLocaleString()}` : '-'}</td>
                       <td className="py-3 px-2">{p.weightPerPiece} kg</td>
                       <td className="py-3 px-2 text-[#137333]">ETB {p.tierPrice?.toLocaleString()}</td>
@@ -417,20 +431,25 @@ export default function SellerDashboard() {
             </div>
 
             <form onSubmit={handleAddProduct} className="space-y-3 text-xs font-bold">
-              {/* Product Photo URL (Required) */}
+              {/* Product Photo Upload (Required File Input) */}
               <div>
-                <label className="block mb-1 text-[#6E655F]">{t.imageUrlLabel} *</label>
+                <label className="block mb-1 text-[#6E655F]">{t.imageFileLabel} *</label>
                 <input 
                   required 
-                  type="url" 
-                  placeholder="https://example.com/photo.jpg" 
-                  value={newImageUrl} 
-                  onChange={e => setNewImageUrl(e.target.value)} 
-                  className="w-full border border-[#EFECE6] rounded-xl p-2.5 focus:outline-none font-normal" 
+                  type="file" 
+                  accept="image/*"
+                  onChange={handleImageUpload} 
+                  className="w-full border border-[#EFECE6] rounded-xl p-2 focus:outline-none font-normal text-xs" 
                 />
+                {newImageBase64 && (
+                  <div className="mt-2 flex items-center gap-2">
+                    <img src={newImageBase64} alt="Preview" className="w-12 h-12 object-cover rounded-lg border border-[#EFECE6]" />
+                    <span className="text-[10px] text-green-600 font-bold">Photo ready!</span>
+                  </div>
+                )}
               </div>
 
-              {/* Product Name (Custom/Required) */}
+              {/* Product Name */}
               <div>
                 <label className="block mb-1 text-[#6E655F]">{t.productName} *</label>
                 <input 
@@ -447,13 +466,15 @@ export default function SellerDashboard() {
               <div>
                 <label className="block mb-1 text-[#6E655F]">{t.category}</label>
                 <select value={newCategory} onChange={e => setNewCategory(e.target.value)} className="w-full border border-[#EFECE6] rounded-xl p-2.5 focus:outline-none bg-white">
-                  {CATEGORIES.map(cat => (
-                    <option key={cat} value={cat}>{cat}</option>
+                  {CATEGORIES_TRANSLATED.map(cat => (
+                    <option key={cat.key} value={cat.key}>
+                      {cat[lang]}
+                    </option>
                   ))}
                 </select>
               </div>
 
-              {/* Kg Price (Custom/Optional) & Weight Per Piece (Required) */}
+              {/* Kg Price & Weight Per Piece */}
               <div className="grid grid-cols-2 gap-2">
                 <div>
                   <label className="block mb-1 text-[#6E655F]">{t.kgPrice}</label>
@@ -478,7 +499,7 @@ export default function SellerDashboard() {
                 </div>
               </div>
 
-              {/* Price in Bulk (Required) & Stock (Required) */}
+              {/* Price in Bulk & Stock */}
               <div className="grid grid-cols-2 gap-2">
                 <div>
                   <label className="block mb-1 text-[#6E655F]">{t.bulkPrice} *</label>
@@ -504,7 +525,7 @@ export default function SellerDashboard() {
                 </div>
               </div>
 
-              {/* Min Bulk Qty (Required) & Max Bulk Qty (Required) */}
+              {/* Min Bulk Qty & Max Bulk Qty */}
               <div className="grid grid-cols-2 gap-2">
                 <div>
                   <label className="block mb-1 text-[#6E655F]">{t.minBulkQty} *</label>
